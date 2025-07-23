@@ -1,41 +1,55 @@
 export const Colors = {
-  // Primary Brand Colors
-  primary: '#FBBC05',      // Golden yellow
-  primaryDark: '#E6A800',  // Darker golden yellow
-  primaryLight: '#FFCC33', // Lighter golden yellow
+  // Primary Brand Colors - Gaming Golden Theme
+  primary: '#FFD700',      // Bright golden yellow (like in the image)
+  primaryDark: '#FFA500',  // Orange-gold
+  primaryLight: '#FFEB3B', // Lighter golden yellow
   
-  // Dark Theme
+  // Dark Gaming Theme (matching the image)
   dark: {
-    background: '#0E121A',     // Main dark background
-    surface: '#1A1F2E',       // Card/surface background
-    surfaceLight: '#252B3A',  // Lighter surface
-    text: '#FFFFFF',          // Primary text
-    textSecondary: '#B0B8C4', // Secondary text
-    textMuted: '#7A8194',     // Muted text
-    border: '#2A3441',        // Border color
-    accent: '#FBBC05',        // Accent color (golden)
-    accentSecondary: '#FF6B35', // Secondary accent (orange)
-    success: '#10B981',       // Success green
-    warning: '#F59E0B',       // Warning amber
-    error: '#EF4444',         // Error red
-    info: '#3B82F6',          // Info blue
+    background: '#0A0A0A',     // Very dark background (almost black)
+    surface: '#1C1C1C',       // Slightly lighter for cards
+    surfaceLight: '#2A2A2A',  // Even lighter surface
+    text: '#FFFFFF',          // Pure white text
+    textSecondary: '#CCCCCC', // Light gray text
+    textMuted: '#888888',     // Muted gray text
+    border: '#333333',        // Dark border
+    accent: '#FFD700',        // Bright golden accent
+    accentSecondary: '#FFA500', // Orange-gold secondary
+    success: '#4CAF50',       // Success green
+    warning: '#FFD700',       // Golden warning (matches theme)
+    error: '#F44336',         // Red for health/error
+    info: '#2196F3',          // Blue info
+    
+    // Gaming-specific colors
+    health: '#F44336',        // Red health bar
+    xp: '#FFD700',            // Golden XP bar
+    cardBackground: '#FFD700', // Golden card backgrounds
+    cardText: '#1A1A1A',      // Dark text on golden cards
+    streak: '#FF6B35',        // Orange flame for streaks
   },
   
-  // Light Theme
+  // Light Theme (keeping similar structure but less relevant for this design)
   light: {
-    background: '#FFFFFF',    // Light background
-    surface: '#F8FAFC',       // Card/surface background
-    surfaceLight: '#F1F5F9',  // Lighter surface
-    text: '#0E121A',          // Primary text (using dark color)
-    textSecondary: '#475569', // Secondary text
-    textMuted: '#64748B',     // Muted text
-    border: '#E2E8F0',        // Border color
-    accent: '#FBBC05',        // Accent color (golden)
-    accentSecondary: '#FF6B35', // Secondary accent (orange)
-    success: '#10B981',       // Success green
-    warning: '#F59E0B',       // Warning amber
-    error: '#EF4444',         // Error red
-    info: '#3B82F6',          // Info blue
+    background: '#FFFFFF',
+    surface: '#F8FAFC',
+    surfaceLight: '#F1F5F9',
+    text: '#1A1A1A',
+    textSecondary: '#475569',
+    textMuted: '#64748B',
+    border: '#E2E8F0',
+    accent: '#FFD700',
+    accentSecondary: '#FFA500',
+    success: '#4CAF50',
+    warning: '#FFD700',
+    error: '#F44336',
+    info: '#2196F3',
+    
+    // Gaming-specific colors for light mode
+    health: '#F44336',
+    xp: '#FFD700',
+    cardBackground: '#FFD700',
+    cardText: '#1A1A1A',
+    streak: '#FF6B35',
   },
   
   // Common colors that work in both themes
@@ -43,34 +57,35 @@ export const Colors = {
   black: '#000000',
   transparent: 'transparent',
   
-  // Gradient combinations
+  // Gaming-focused gradient combinations
   gradients: {
-    primary: ['#FBBC05', '#E6A800'],
-    dark: ['#0E121A', '#1A1F2E'],
-    accent: ['#FBBC05', '#FF6B35'],
+    primary: ['#FFD700', '#FFA500'],
+    dark: ['#0A0A0A', '#1C1C1C'],
+    accent: ['#FFD700', '#FF6B35'],
+    gold: ['#FFD700', '#DAA520'],
   },
   
-  // Status colors with opacity variants
+  // Status colors with gaming aesthetic
   status: {
     success: {
-      main: '#10B981',
-      light: 'rgba(16, 185, 129, 0.1)',
-      dark: '#059669',
+      main: '#4CAF50',
+      light: 'rgba(76, 175, 80, 0.1)',
+      dark: '#388E3C',
     },
     warning: {
-      main: '#F59E0B',
-      light: 'rgba(245, 158, 11, 0.1)',
-      dark: '#D97706',
+      main: '#FFD700',
+      light: 'rgba(255, 215, 0, 0.1)',
+      dark: '#FFA000',
     },
     error: {
-      main: '#EF4444',
-      light: 'rgba(239, 68, 68, 0.1)',
-      dark: '#DC2626',
+      main: '#F44336',
+      light: 'rgba(244, 67, 54, 0.1)',
+      dark: '#D32F2F',
     },
     info: {
-      main: '#3B82F6',
-      light: 'rgba(59, 130, 246, 0.1)',
-      dark: '#2563EB',
+      main: '#2196F3',
+      light: 'rgba(33, 150, 243, 0.1)',
+      dark: '#1976D2',
     },
   },
 };

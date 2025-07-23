@@ -7,6 +7,7 @@ type StatsCardProps = {
   value: string;
   icon?: React.ReactNode;
   accentColor?: string;
+  useGoldenCard?: boolean; // New prop for golden card style
 };
 
 export default function StatsCard({
@@ -14,28 +15,33 @@ export default function StatsCard({
   value,
   icon,
   accentColor = Colors.primary,
+  useGoldenCard = false,
 }: StatsCardProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
 
+  const cardBackground = useGoldenCard ? theme.cardBackground : theme.surface;
+  const textColor = useGoldenCard ? theme.cardText : theme.text;
+  const secondaryTextColor = useGoldenCard ? theme.cardText : theme.textSecondary;
+
   return (
     <View style={[styles.container, { 
-      backgroundColor: theme.surface,
+      backgroundColor: cardBackground,
       borderColor: theme.border,
       shadowColor: isDark ? Colors.black : accentColor,
     }]}>
       {icon && (
         <View style={[styles.iconContainer, { 
-          backgroundColor: accentColor + '15',
+          backgroundColor: useGoldenCard ? 'rgba(0,0,0,0.1)' : accentColor + '15',
           borderRadius: 12,
           padding: 8,
         }]}>
           {icon}
         </View>
       )}
-      <Text style={[styles.value, { color: theme.text }]}>{value}</Text>
-      <Text style={[styles.title, { color: theme.textSecondary }]}>{title}</Text>
+      <Text style={[styles.value, { color: textColor }]}>{value}</Text>
+      <Text style={[styles.title, { color: secondaryTextColor }]}>{title}</Text>
     </View>
   );
 }
@@ -48,10 +54,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   iconContainer: {
     marginBottom: 8,
@@ -63,5 +69,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
+    textAlign: 'center',
   },
 });

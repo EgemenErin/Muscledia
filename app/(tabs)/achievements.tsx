@@ -3,102 +3,139 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  Image,
+  ScrollView,
   useColorScheme,
 } from 'react-native';
 import { useCharacter } from '@/hooks/useCharacter';
+import { Colors, getThemeColors } from '@/constants/Colors';
+import { Trophy, Star, Award, Crown, Zap } from 'lucide-react-native';
 import { badges } from '@/data/badges';
-import { Lock } from 'lucide-react-native';
 
 export default function AchievementsScreen() {
-  const { character } = useCharacter();
   const colorScheme = useColorScheme();
-
   const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#F9FAFB' : '#111827';
-  const bgColor = isDark ? '#111827' : '#F9FAFB';
-  const cardBgColor = isDark ? '#1F2937' : '#FFFFFF';
+  const theme = getThemeColors(isDark);
+  const { character } = useCharacter();
 
-  // Determine which badges the user has earned
-  const badgesWithStatus = badges.map(badge => {
-    let isUnlocked = false;
-    
-    switch (badge.criteriaType) {
-      case 'level':
-        isUnlocked = character.level >= badge.criteriaValue;
-        break;
-      case 'streak':
-        isUnlocked = character.streak >= badge.criteriaValue;
-        break;
-      case 'quests':
-        isUnlocked = character.questsCompleted >= badge.criteriaValue;
-        break;
+  // Check if badge is unlocked based on character progress
+  const isBadgeUnlocked = (badge: any) => {
+    switch (badge.id) {
+      case 'first-workout':
+        return character.totalXP > 0;
+      case 'streak-master':
+        return character.streak >= 7;
+      case 'xp-collector':
+        return character.totalXP >= 1000;
+      case 'quest-hunter':
+        return character.questsCompleted >= 10;
+      case 'level-up':
+        return character.level >= 5;
+      case 'dedication':
+        return character.streak >= 30;
       default:
-        isUnlocked = false;
+        return false;
     }
-    
-    return {
-      ...badge,
-      isUnlocked
-    };
-  });
+  };
 
-  const renderBadgeItem = ({ item }) => {
+  const BadgeCard = ({ badge }: { badge: any }) => {
+    const unlocked = isBadgeUnlocked(badge);
+    
     return (
-      <View style={[styles.badgeCard, { backgroundColor: cardBgColor }]}>
-        <View style={styles.badgeImageContainer}>
-          {item.isUnlocked ? (
-            <Image 
-              source={{ uri: item.imageUrl }} 
-              style={styles.badgeImage} 
-              resizeMode="contain"
-            />
+      <View 
+        style={[
+          styles.badgeCard, 
+          { 
+            backgroundColor: unlocked ? theme.cardBackground : theme.surface,
+            opacity: unlocked ? 1 : 0.6 
+          }
+        ]}
+      >
+        <View style={[styles.badgeIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
+          {unlocked ? (
+            <Trophy size={32} color={theme.cardText} />
           ) : (
-            <View style={styles.lockedBadge}>
-              <Lock size={24} color={isDark ? '#9CA3AF' : '#9CA3AF'} />
-            </View>
+            <Award size={32} color={theme.textMuted} />
           )}
         </View>
-        
-        <Text style={[styles.badgeName, { color: textColor }]}>
-          {item.name}
+        <Text style={[styles.badgeTitle, { color: unlocked ? theme.cardText : theme.text }]}>
+          {badge.title}
         </Text>
-        
-        <Text 
-          style={[
-            styles.badgeDescription, 
-            { color: isDark ? '#D1D5DB' : '#6B7280' }
-          ]}
-        >
-          {item.isUnlocked ? item.description : item.unlockCriteria}
+        <Text style={[styles.badgeDescription, { color: unlocked ? theme.cardText : theme.textSecondary }]}>
+          {badge.description}
         </Text>
-        
-        {item.isUnlocked && (
-          <View style={styles.unlockedBadge}>
-            <Text style={styles.unlockedText}>Unlocked</Text>
+        {unlocked && (
+          <View style={styles.unlockedIndicator}>
+            <Star size={16} color={theme.cardText} />
+            <Text style={[styles.unlockedText, { color: theme.cardText }]}>Unlocked!</Text>
           </View>
         )}
       </View>
     );
   };
 
+  const StatsCard = ({ icon, title, value, color }: { icon: any; title: string; value: string; color: string }) => (
+    <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
+      <View style={[styles.statIcon, { backgroundColor: color + '20' }]}>
+        {icon}
+      </View>
+      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.statTitle, { color: theme.textSecondary }]}>{title}</Text>
+    </View>
+  );
+
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <View style={styles.statsContainer}>
-        <Text style={[styles.statsText, { color: textColor }]}>
-          Badges Earned: {badgesWithStatus.filter(b => b.isUnlocked).length} / {badges.length}
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* Stats Overview */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Progress</Text>
+      <View style={styles.statsGrid}>
+        <StatsCard 
+          icon={<Trophy size={20} color={theme.accent} />}
+          title="Level"
+          value={character.level.toString()}
+          color={theme.accent}
+        />
+        <StatsCard 
+          icon={<Zap size={20} color="#0EA5E9" />}
+          title="Total XP"
+          value={character.totalXP.toString()}
+          color="#0EA5E9"
+        />
+        <StatsCard 
+          icon={<Award size={20} color="#10B981" />}
+          title="Quests"
+          value={character.questsCompleted.toString()}
+          color="#10B981"
+        />
+        <StatsCard 
+          icon={<Crown size={20} color="#F97316" />}
+          title="Streak"
+          value={character.streak.toString()}
+          color="#F97316"
+        />
+      </View>
+
+      {/* Achievements */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Achievements</Text>
+      <View style={styles.badgesGrid}>
+        {badges.map((badge) => (
+          <BadgeCard key={badge.id} badge={badge} />
+        ))}
+      </View>
+
+      {/* Arena Info */}
+      <View style={[styles.arenaCard, { backgroundColor: theme.cardBackground }]}>
+        <Text style={[styles.arenaTitle, { color: theme.cardText }]}>Training Arena</Text>
+        <Text style={[styles.arenaDescription, { color: theme.cardText }]}>
+          Compete with other warriors and climb the leaderboards!
+        </Text>
+        <Text style={[styles.arenaStatus, { color: theme.cardText }]}>
+          Coming Soon...
         </Text>
       </View>
-      
-      <FlatList
-        data={badgesWithStatus}
-        renderItem={renderBadgeItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        numColumns={2}
-      />
-    </View>
+    </ScrollView>
   );
 }
 
@@ -106,22 +143,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  statsContainer: {
+  contentContainer: {
     padding: 16,
-    alignItems: 'center',
   },
-  statsText: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 16,
+    marginTop: 8,
   },
-  listContent: {
-    padding: 12,
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
   },
-  badgeCard: {
-    flex: 1,
+  statCard: {
+    width: '48%',
     borderRadius: 16,
     padding: 16,
-    margin: 4,
+    marginBottom: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -129,48 +170,92 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  badgeImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F3F4F6',
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statTitle: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  badgesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  badgeCard: {
+    width: '48%',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  badgeIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    overflow: 'hidden',
   },
-  badgeImage: {
-    width: 60,
-    height: 60,
-  },
-  lockedBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeName: {
-    fontSize: 16,
+  badgeTitle: {
+    fontSize: 14,
     fontWeight: 'bold',
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: 4,
   },
   badgeDescription: {
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 8,
   },
-  unlockedBadge: {
-    backgroundColor: '#10B981',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+  unlockedIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   unlockedText: {
-    color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  arenaCard: {
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  arenaTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  arenaDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  arenaStatus: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    opacity: 0.8,
   },
 });

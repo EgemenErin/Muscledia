@@ -13,11 +13,13 @@ import { useCharacter } from '@/hooks/useCharacter';
 import { useAuth } from '@/hooks/useAuth';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import ProgressBar from '@/components/ProgressBar';
-import { Siren as Fire, Zap, Trophy, TrendingUp } from 'lucide-react-native';
+import { Siren as Fire, Zap, Trophy, TrendingUp, Heart, Coins } from 'lucide-react-native';
 import StatsCard from '@/components/StatsCard';
 import { getGreeting } from '@/utils/helpers';
 import { useWorkouts } from '@/hooks/useWorkouts';
+import { useRoutines } from '@/hooks/useRoutines';
 import { Colors, getThemeColors } from '@/constants/Colors';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const { character, incrementXP } = useCharacter();
@@ -25,6 +27,8 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const [greeting, setGreeting] = useState('');
   const { workouts } = useWorkouts();
+  const { routines } = useRoutines();
+  const router = useRouter();
   
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
@@ -52,123 +56,119 @@ export default function HomeScreen() {
     setGreeting(getGreeting());
   }, []);
 
-  const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#F9FAFB' : '#111827';
-  const bgColor = isDark ? '#111827' : '#F9FAFB';
-  const cardBgColor = isDark ? '#1F2937' : '#FFFFFF';
-
   return (
     <ScrollView 
-      style={[styles.container, { backgroundColor: bgColor }]}
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.contentContainer}
     >
+      {/* Header with coin display */}
       <View style={styles.header}>
-        <Text style={[styles.greeting, { color: textColor }]}>{greeting}</Text>
-        <Text style={[styles.username, { color: textColor }]}>
-          {character.name || 'Adventurer'}
-        </Text>
+        <Text style={[styles.appTitle, { color: theme.text }]}>Muscledia</Text>
+        <View style={styles.coinContainer}>
+          <Coins size={20} color={theme.accent} />
+          <Text style={[styles.coinText, { color: theme.accent }]}>100</Text>
+        </View>
       </View>
 
-      <View style={[styles.characterSection, { backgroundColor: cardBgColor }]}>
-        <CharacterAvatar 
-          level={character.level} 
-          gender={character.gender} 
-          streak={character.streak}
-          size="large"
-        />
-        <View style={styles.levelInfo}>
-          <Text style={[styles.levelText, { color: textColor }]}>
-            Level {character.level}
-          </Text>
+      {/* Character Section with Health and Level bars */}
+      <View style={[styles.characterSection, { backgroundColor: theme.surface }]}>
+        {/* Health Bar */}
+        <View style={styles.healthContainer}>
+          <Heart size={16} color={theme.health} />
+          <Text style={[styles.barLabel, { color: theme.text }]}>Health</Text>
+          <ProgressBar 
+            progress={0.58} // 29/50 as shown in image
+            color={theme.health}
+            height={8}
+          />
+          <Text style={[styles.barText, { color: theme.textSecondary }]}>29/50</Text>
+        </View>
+
+        {/* Character Avatar */}
+        <View style={styles.avatarContainer}>
+          <CharacterAvatar 
+            level={character.level} 
+            gender={character.gender} 
+            streak={character.streak}
+            size="large"
+          />
+          {character.streak >= 3 && (
+            <View style={styles.streakIndicator}>
+              <Fire size={20} color={theme.streak} />
+            </View>
+          )}
+        </View>
+
+        {/* Level Bar */}
+        <View style={styles.levelContainer}>
+          <Text style={[styles.levelText, { color: theme.accent }]}>⭐</Text>
+          <Text style={[styles.barLabel, { color: theme.text }]}>Level {character.level}</Text>
           <ProgressBar 
             progress={character.xp / character.xpToNextLevel} 
-            color="#6D28D9"
+            color={theme.xp}
+            height={8}
           />
-          <Text style={[styles.xpText, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
-            {character.xp}/{character.xpToNextLevel} XP to Level {character.level + 1}
+          <Text style={[styles.barText, { color: theme.textSecondary }]}>
+            {character.xp}/{character.xpToNextLevel}
           </Text>
         </View>
       </View>
 
-      <Text style={[styles.sectionTitle, { color: textColor }]}>
-        Your Stats
-      </Text>
-
-      <View style={styles.statsGrid}>
-        <StatsCard 
-          title="Streak"
-          value={character.streak.toString()}
-          icon={<Fire size={24} color="#F97316" />}
-          bgColor={isDark ? '#374151' : '#FFFFFF'}
-          textColor={textColor}
-        />
-        <StatsCard 
-          title="Total XP"
-          value={character.totalXP.toString()}
-          icon={<Zap size={24} color="#0EA5E9" />}
-          bgColor={isDark ? '#374151' : '#FFFFFF'}
-          textColor={textColor}
-        />
-        <StatsCard 
-          title="Quests Done"
-          value={character.questsCompleted.toString()}
-          icon={<Trophy size={24} color="#10B981" />}
-          bgColor={isDark ? '#374151' : '#FFFFFF'}
-          textColor={textColor}
-        />
-        <StatsCard 
-          title="Level Ups"
-          value={character.level.toString()}
-          icon={<TrendingUp size={24} color="#6D28D9" />}
-          bgColor={isDark ? '#374151' : '#FFFFFF'}
-          textColor={textColor}
-        />
-      </View>
-
-      <Text style={[styles.sectionTitle, { color: textColor }]}>
-        Next Quest
-      </Text>
-
-      <TouchableOpacity 
-        style={[styles.nextQuestCard, { backgroundColor: cardBgColor }]}
-        onPress={() => incrementXP(50)}
-      >
-        <View style={styles.questContent}>
-          <Text style={[styles.questTitle, { color: textColor }]}>
-            Morning Workout Challenge
-          </Text>
-          <Text style={[styles.questDescription, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
-            Complete 20 push-ups and 30 squats
-          </Text>
-          <View style={styles.questReward}>
-            <Zap size={16} color="#0EA5E9" />
-            <Text style={[styles.questRewardText, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
-              +50 XP
-            </Text>
+      {/* Starting Objectives Section */}
+      <View style={[styles.goldenCard, { backgroundColor: theme.cardBackground }]}>
+        <Text style={[styles.cardTitle, { color: theme.cardText }]}>Starting Objectives</Text>
+        <View style={styles.objectiveProgress}>
+          <ProgressBar 
+            progress={0.2} // 1/5 as shown in image
+            color="#6B46C1"
+            height={8}
+          />
+          <View style={styles.objectiveReward}>
+            <Coins size={16} color={theme.cardText} />
+            <Text style={[styles.objectiveRewardText, { color: theme.cardText }]}>100</Text>
+            <Text style={[styles.objectiveProgressText, { color: theme.cardText }]}>1/5</Text>
           </View>
         </View>
-        <View style={[styles.questButton, { backgroundColor: '#6D28D9' }]}>
-          <Text style={styles.questButtonText}>Start</Text>
-        </View>
-      </TouchableOpacity>
+      </View>
 
-      {/* Recent Workouts Section */}
-      <Text style={[styles.sectionTitle, { color: textColor }]}>Recent Workouts</Text>
-      {workoutsToShow.length === 0 ? (
-        <View style={[styles.noWorkoutsCard, { backgroundColor: cardBgColor }]}> 
-          <Text style={{ color: textColor }}>No workouts so far. Add one from the Exercises tab!</Text>
-        </View>
+      {/* My Routines Section */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>My Routines ({routines.length})</Text>
+      
+      {routines.length === 0 ? (
+        <TouchableOpacity 
+          style={[styles.goldenCard, { backgroundColor: theme.cardBackground }]}
+          onPress={() => router.push('/routine-builder')}
+        >
+          <View style={styles.routineContent}>
+            <Text style={[styles.routineTitle, { color: theme.cardText }]}>Create Your First Routine</Text>
+            <Text style={[styles.routineDescription, { color: theme.cardText }]}>
+              Tap to start building your custom workout routine
+            </Text>
+          </View>
+          <Text style={[styles.routineArrow, { color: theme.cardText }]}>+</Text>
+        </TouchableOpacity>
       ) : (
-        workoutsToShow.slice(0, 5).map((workout, idx) => (
-          <View key={workout.timestamp} style={[styles.workoutCard, { backgroundColor: cardBgColor }]}> 
-            <Text style={[styles.workoutName, { color: textColor }]}>{workout.name}</Text>
-            <Text style={[styles.workoutDetails, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>Sets: {workout.sets}   Reps: {workout.reps}   Weight: {workout.weight} kg</Text>
-            <Text style={[styles.workoutDate, { color: isDark ? '#9CA3AF' : '#6B7280' }]}> 
-              {new Date(workout.timestamp).toLocaleString()}
-            </Text>
-          </View>
+        routines.map((routine) => (
+          <TouchableOpacity 
+            key={routine.id}
+            style={[styles.goldenCard, { backgroundColor: theme.cardBackground }]}
+            onPress={() => router.push(`/routine-workout/${routine.id}`)}
+          >
+            <View style={styles.routineContent}>
+              <Text style={[styles.routineTitle, { color: theme.cardText }]}>{routine.name}</Text>
+              <Text style={[styles.routineDescription, { color: theme.cardText }]}>
+                {routine.exercises.map(ex => ex.name).join(', ')}
+              </Text>
+              <Text style={[styles.routineSubtext, { color: theme.cardText }]}>
+                {routine.exercises.length} exercise{routine.exercises.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <Text style={[styles.routineArrow, { color: theme.cardText }]}>›</Text>
+          </TouchableOpacity>
         ))
       )}
+
+
     </ScrollView>
   );
 }
@@ -181,117 +181,127 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    marginBottom: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  greeting: {
+  appTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  coinContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  coinText: {
     fontSize: 16,
-    marginBottom: 4,
-  },
-  username: {
-    fontSize: 24,
     fontWeight: 'bold',
   },
   characterSection: {
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    justifyContent: 'space-between',
   },
-  levelInfo: {
+  healthContainer: {
     flex: 1,
-    marginLeft: 16,
+    alignItems: 'center',
+    paddingRight: 10,
+  },
+  levelContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingLeft: 10,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    position: 'relative',
+  },
+  streakIndicator: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+  },
+  barLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  barText: {
+    fontSize: 11,
+    marginTop: 4,
   },
   levelText: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  goldenCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  xpText: {
+  objectiveProgress: {
+    gap: 8,
+  },
+  objectiveReward: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  objectiveRewardText: {
     fontSize: 14,
-    marginTop: 8,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  objectiveProgressText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12,
     marginTop: 8,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  nextQuestCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  questContent: {
+  routineContent: {
     flex: 1,
   },
-  questTitle: {
+  routineTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  questDescription: {
-    fontSize: 14,
-    marginBottom: 8,
+  routineDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 4,
   },
-  questReward: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  routineSubtext: {
+    fontSize: 11,
+    opacity: 0.8,
   },
-  questRewardText: {
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  questButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginLeft: 16,
-  },
-  questButtonText: {
-    color: 'white',
+  routineArrow: {
+    fontSize: 24,
     fontWeight: 'bold',
   },
   workoutCard: {
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  noWorkoutsCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 12,
   },
   workoutName: {
     fontSize: 16,

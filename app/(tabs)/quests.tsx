@@ -3,114 +3,137 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
+  ScrollView,
   useColorScheme,
 } from 'react-native';
 import { useCharacter } from '@/hooks/useCharacter';
-import { Zap, CircleCheck as CheckCircle, Clock } from 'lucide-react-native';
-import { dailyQuests } from '@/data/quests';
+import { Colors, getThemeColors } from '@/constants/Colors';
+import { Zap, Trophy, Clock, CheckCircle } from 'lucide-react-native';
+import { dailyQuests, weeklyQuests, specialQuests } from '@/data/quests';
 
 export default function QuestsScreen() {
-  const { character, completeQuest } = useCharacter();
   const colorScheme = useColorScheme();
-  const [completedQuestIds, setCompletedQuestIds] = useState<string[]>([]);
-
   const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#F9FAFB' : '#111827';
-  const bgColor = isDark ? '#111827' : '#F9FAFB';
-  const cardBgColor = isDark ? '#1F2937' : '#FFFFFF';
+  const theme = getThemeColors(isDark);
+  const { character, incrementXP, completeQuest } = useCharacter();
+  const [completedQuests, setCompletedQuests] = useState<string[]>([]);
 
-  const handleCompleteQuest = (questId: string, xp: number) => {
-    if (!completedQuestIds.includes(questId)) {
-      completeQuest(questId, xp);
-      setCompletedQuestIds([...completedQuestIds, questId]);
+  const handleQuestComplete = (questId: string, xpReward: number) => {
+    if (!completedQuests.includes(questId)) {
+      setCompletedQuests([...completedQuests, questId]);
+      incrementXP(xpReward);
+      completeQuest(questId, xpReward);
     }
   };
 
-  const renderQuestItem = ({ item }) => {
-    const isCompleted = completedQuestIds.includes(item.id);
+  const QuestCard = ({ quest, type }: { quest: { id: string; title: string; description: string; xp: number }; type: string }) => {
+    const isCompleted = completedQuests.includes(quest.id);
     
     return (
-      <View 
+      <TouchableOpacity
         style={[
-          styles.questCard, 
-          { backgroundColor: cardBgColor },
-          isCompleted && styles.completedCard
+          styles.questCard,
+          { backgroundColor: isCompleted ? theme.success : theme.cardBackground }
         ]}
+        onPress={() => handleQuestComplete(quest.id, quest.xp)}
+        disabled={isCompleted}
       >
         <View style={styles.questHeader}>
-          <Text style={[styles.questTitle, { color: textColor }]}>
-            {item.title}
-          </Text>
-          {isCompleted ? (
-            <CheckCircle size={24} color="#10B981" />
-          ) : (
-            <View style={styles.xpBadge}>
-              <Zap size={14} color="#FFFFFF" />
-              <Text style={styles.xpText}>{item.xp} XP</Text>
-            </View>
-          )}
-        </View>
-        
-        <Text 
-          style={[
-            styles.questDescription, 
-            { color: isDark ? '#D1D5DB' : '#4B5563' }
-          ]}
-        >
-          {item.description}
-        </Text>
-        
-        <View style={styles.questFooter}>
-          <View style={styles.timeInfo}>
-            <Clock size={16} color={isDark ? '#9CA3AF' : '#6B7280'} />
-            <Text 
-              style={[
-                styles.timeText, 
-                { color: isDark ? '#9CA3AF' : '#6B7280' }
-              ]}
-            >
-              {item.estimatedTime}
+          <View style={[styles.questIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
+            {isCompleted ? (
+              <CheckCircle size={24} color={theme.cardText} />
+            ) : (
+              <Zap size={24} color={theme.cardText} />
+            )}
+          </View>
+          <View style={styles.questInfo}>
+            <Text style={[styles.questTitle, { color: theme.cardText }]}>
+              {quest.title}
+            </Text>
+            <Text style={[styles.questDescription, { color: theme.cardText }]}>
+              {quest.description}
             </Text>
           </View>
-          
-          {!isCompleted && (
-            <TouchableOpacity
-              style={styles.completeButton}
-              onPress={() => handleCompleteQuest(item.id, item.xp)}
-            >
-              <Text style={styles.completeButtonText}>
-                Complete
-              </Text>
-            </TouchableOpacity>
-          )}
-          
-          {isCompleted && (
-            <Text style={styles.completedText}>
-              Completed
-            </Text>
-          )}
         </View>
-      </View>
+        
+        <View style={styles.questReward}>
+          <View style={styles.rewardContainer}>
+            <Zap size={16} color={theme.cardText} />
+            <Text style={[styles.rewardText, { color: theme.cardText }]}>
+              +{quest.xp} XP
+            </Text>
+          </View>
+          <Text style={[styles.questType, { color: theme.cardText }]}>
+            {type}
+          </Text>
+        </View>
+      </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <View style={styles.streakContainer}>
-        <Text style={[styles.streakText, { color: textColor }]}>
-          🔥 Current Streak: {character.streak} days
-        </Text>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* Stats Header */}
+      <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
+        <View style={styles.statItem}>
+          <Trophy size={24} color={theme.accent} />
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {character.questsCompleted}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Completed
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Clock size={24} color={theme.accent} />
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {dailyQuests.length - completedQuests.filter(id => 
+              dailyQuests.some(q => q.id === id)
+            ).length}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Remaining
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Zap size={24} color={theme.accent} />
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {character.totalXP}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            Total XP
+          </Text>
+        </View>
       </View>
-      
-      <FlatList
-        data={dailyQuests}
-        renderItem={renderQuestItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-      />
-    </View>
+
+      {/* Daily Quests */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>
+        Daily Challenges
+      </Text>
+      {dailyQuests.map((quest) => (
+        <QuestCard key={quest.id} quest={quest} type="Daily" />
+      ))}
+
+      {/* Weekly Challenges */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>
+        Weekly Challenges
+      </Text>
+      {weeklyQuests.map((quest) => (
+        <QuestCard key={quest.id} quest={quest} type="Weekly" />
+      ))}
+
+      {/* Special Events */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>
+        Special Events
+      </Text>
+      {specialQuests.map((quest) => (
+        <QuestCard key={quest.id} quest={quest} type="Special" />
+      ))}
+    </ScrollView>
   );
 }
 
@@ -118,83 +141,90 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  streakContainer: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  streakText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  listContent: {
+  contentContainer: {
     padding: 16,
   },
-  questCard: {
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 20,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  completedCard: {
-    opacity: 0.8,
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  questCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   questHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  questTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  questIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  questInfo: {
     flex: 1,
   },
-  xpBadge: {
-    backgroundColor: '#6D28D9',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  xpText: {
-    color: 'white',
-    marginLeft: 4,
+  questTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
   questDescription: {
     fontSize: 14,
-    marginBottom: 16,
+    opacity: 0.9,
   },
-  questFooter: {
+  questReward: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  timeInfo: {
+  rewardContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
-  timeText: {
-    marginLeft: 4,
+  rewardText: {
     fontSize: 14,
-  },
-  completeButton: {
-    backgroundColor: '#6D28D9',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  completeButtonText: {
-    color: 'white',
     fontWeight: 'bold',
   },
-  completedText: {
-    color: '#10B981',
-    fontWeight: 'bold',
+  questType: {
+    fontSize: 12,
+    fontWeight: '600',
+    opacity: 0.8,
   },
 });

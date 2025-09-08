@@ -56,6 +56,42 @@ export default function HomeScreen() {
     setGreeting(getGreeting());
   }, []);
 
+  const RoutineCard = ({ routine }: { routine: any }) => (
+    <TouchableOpacity 
+      onPress={() => router.push(`/routine-workout/${routine.id}`)}
+      activeOpacity={0.9}
+      style={styles.routineCardWrapper}
+    >
+      <LinearGradient
+        colors={[theme.accent, theme.accentSecondary]}
+        locations={[0, 0.85]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.routineCard}
+      >
+        <View style={styles.routineHeader}>
+          <Text style={[styles.routineName, { color: theme.cardText }]} numberOfLines={1}>
+            {routine.name}
+          </Text>
+          <Text style={[styles.routineChevron, { color: theme.cardText }]}>›</Text>
+        </View>
+        <Text style={[styles.routineExercises, { color: theme.cardText }]} numberOfLines={2}>
+          {routine.exercises.map((ex: any) => ex.name).join(', ')}
+        </Text>
+        <View style={styles.routineChipsRow}>
+          <View style={[styles.chip, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
+            <Text style={[styles.chipText, { color: theme.cardText }]}>
+              {routine.exercises.length} exercises
+            </Text>
+          </View>
+          <View style={[styles.chip, { backgroundColor: 'rgba(0,0,0,0.15)' }]}>
+            <Text style={[styles.chipText, { color: theme.cardText }]}>Tap to start</Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: theme.background }]}
@@ -70,67 +106,51 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Character Section with Health and Level bars */}
+      {/* Character Section (sprite + bars) */}
       <View style={[styles.characterSection, { backgroundColor: theme.surface }]}>
-        {/* Health Bar */}
-        <View style={styles.healthContainer}>
-          <Heart size={16} color={theme.health} />
-          <Text style={[styles.barLabel, { color: theme.text }]}>Health</Text>
-          <ProgressBar 
-            progress={0.58} // 29/50 as shown in image
-            color={theme.health}
-            height={8}
+        <View style={styles.characterImageContainer}>
+          {character.characterBackgroundUrl ? (
+            <Image
+              source={{ uri: character.characterBackgroundUrl }}
+              style={styles.backgroundImage}
+              resizeMode="cover"
+            />
+          ) : null}
+          <Image
+            source={require('../../assets/images/muscledia_guy.png')}
+            style={styles.characterImage}
+            resizeMode="contain"
           />
-          <Text style={[styles.barText, { color: theme.textSecondary }]}>29/50</Text>
         </View>
-
-        {/* Character Avatar */}
-        <View style={styles.avatarContainer}>
-          <CharacterAvatar 
-            level={character.level} 
-            gender={character.gender} 
-            streak={character.streak}
-            size="large"
-          />
-          {character.streak >= 3 && (
-            <View style={styles.streakIndicator}>
-              <Fire size={20} color={theme.streak} />
+        <View style={styles.barsContainer}>
+          <View style={styles.barRow}>
+            <Text style={[styles.barLeftLabel, { color: theme.text }]}>
+              {character.currentHealth}/{character.maxHealth}
+            </Text>
+            <View style={{ flex: 1 }}>
+              <ProgressBar 
+                progress={Math.max(0, Math.min(1, character.currentHealth / character.maxHealth || 0))} 
+                color={theme.health}
+                height={10}
+              />
             </View>
-          )}
-        </View>
-
-        {/* Level Bar */}
-        <View style={styles.levelContainer}>
-          <Text style={[styles.levelText, { color: theme.accent }]}>⭐</Text>
-          <Text style={[styles.barLabel, { color: theme.text }]}>Level {character.level}</Text>
-          <ProgressBar 
-            progress={character.xp / character.xpToNextLevel} 
-            color={theme.xp}
-            height={8}
-          />
-          <Text style={[styles.barText, { color: theme.textSecondary }]}>
-            {character.xp}/{character.xpToNextLevel}
-          </Text>
-        </View>
-      </View>
-
-      {/* Starting Objectives Section */}
-      <View style={[styles.goldenCard, { backgroundColor: theme.cardBackground }]}>
-        <Text style={[styles.cardTitle, { color: theme.cardText }]}>Starting Objectives</Text>
-        <View style={styles.objectiveProgress}>
-          <ProgressBar 
-            progress={0.2} // 1/5 as shown in image
-            color="#6B46C1"
-            height={8}
-          />
-          <View style={styles.objectiveReward}>
-            <Coins size={16} color={theme.cardText} />
-            <Text style={[styles.objectiveRewardText, { color: theme.cardText }]}>100</Text>
-            <Text style={[styles.objectiveProgressText, { color: theme.cardText }]}>1/5</Text>
+            <Text style={[styles.barRightLabel, { color: theme.textSecondary }]}>Health</Text>
+          </View>
+          <View style={styles.barRow}>
+            <Text style={[styles.barLeftLabel, { color: theme.text }]}>
+              {character.xp}/{character.xpToNextLevel}
+            </Text>
+            <View style={{ flex: 1 }}>
+              <ProgressBar 
+                progress={Math.max(0, Math.min(1, character.xp / character.xpToNextLevel || 0))} 
+                color={theme.xp}
+                height={10}
+              />
+            </View>
+            <Text style={[styles.barRightLabel, { color: theme.textSecondary }]}>Level {character.level}</Text>
           </View>
         </View>
       </View>
-
       {/* My Routines Section */}
       <Text style={[styles.sectionTitle, { color: theme.text }]}>My Routines ({routines.length})</Text>
       
@@ -149,22 +169,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       ) : (
         routines.map((routine) => (
-          <TouchableOpacity 
-            key={routine.id}
-            style={[styles.goldenCard, { backgroundColor: theme.cardBackground }]}
-            onPress={() => router.push(`/routine-workout/${routine.id}`)}
-          >
-            <View style={styles.routineContent}>
-              <Text style={[styles.routineTitle, { color: theme.cardText }]}>{routine.name}</Text>
-              <Text style={[styles.routineDescription, { color: theme.cardText }]}>
-                {routine.exercises.map(ex => ex.name).join(', ')}
-              </Text>
-              <Text style={[styles.routineSubtext, { color: theme.cardText }]}>
-                {routine.exercises.length} exercise{routine.exercises.length !== 1 ? 's' : ''}
-              </Text>
-            </View>
-            <Text style={[styles.routineArrow, { color: theme.cardText }]}>›</Text>
-          </TouchableOpacity>
+          <RoutineCard key={routine.id} routine={routine} />
         ))
       )}
 
@@ -203,41 +208,94 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
+    alignItems: 'center',
+  },
+  characterImageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 240,
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    opacity: 0.6,
+  },
+  characterImage: {
+    width: 200,
+    height: 220,
+  },
+  barsContainer: {
+    width: '100%',
+    marginTop: 8,
+  },
+  barRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 8,
   },
-  healthContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingRight: 10,
-  },
-  levelContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingLeft: 10,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  streakIndicator: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-  },
-  barLabel: {
+  barLeftLabel: {
+    width: 56,
     fontSize: 12,
-    marginTop: 4,
-    marginBottom: 4,
+    textAlign: 'left',
   },
-  barText: {
-    fontSize: 11,
-    marginTop: 4,
+  barRightLabel: {
+    width: 80,
+    fontSize: 12,
+    textAlign: 'right',
   },
-  levelText: {
+  sectionTitle: {
     fontSize: 16,
-    marginBottom: 4,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  routineCardWrapper: {
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  routineCard: {
+    padding: 16,
+    borderRadius: 16,
+  },
+  routineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  routineName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    maxWidth: '90%',
+  },
+  routineChevron: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  routineExercises: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 10,
+  },
+  routineChipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   goldenCard: {
     borderRadius: 16,
@@ -248,34 +306,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  objectiveProgress: {
-    gap: 8,
-  },
-  objectiveReward: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  objectiveRewardText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  objectiveProgressText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    marginTop: 8,
   },
   routineContent: {
     flex: 1,
@@ -297,23 +327,5 @@ const styles = StyleSheet.create({
   routineArrow: {
     fontSize: 24,
     fontWeight: 'bold',
-  },
-  workoutCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  workoutName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  workoutDetails: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  workoutDate: {
-    fontSize: 12,
-    fontStyle: 'italic',
   },
 });

@@ -17,6 +17,15 @@ type Character = {
   height?: number;
   weight?: number;
   goal?: string;
+  // Health system
+  maxHealth: number;
+  currentHealth: number;
+  lastHealthUpdate: string | null; // ISO timestamp for regen calculations
+  // Daily routine limits
+  routinesDate: string | null; // YYYY-MM-DD
+  routinesDoneToday: string[]; // unique routine ids
+  // Customization
+  characterBackgroundUrl?: string | null;
 };
 
 type CharacterContextType = {
@@ -25,6 +34,12 @@ type CharacterContextType = {
   incrementXP: (amount: number) => void;
   completeQuest: (questId: string, xpReward: number) => void;
   resetCharacter: () => void;
+  // Health helpers
+  applyHealthRegen: () => void;
+  consumeHealth: (amount: number) => boolean;
+  // Daily routine helpers
+  canStartRoutineToday: (routineId: string) => boolean;
+  registerRoutineStart: (routineId: string) => void;
 };
 
 const DEFAULT_CHARACTER: Character = {
@@ -37,6 +52,12 @@ const DEFAULT_CHARACTER: Character = {
   lastWorkout: null,
   questsCompleted: 0,
   gender: 'male',
+  maxHealth: 50,
+  currentHealth: 50,
+  lastHealthUpdate: null,
+  routinesDate: null,
+  routinesDoneToday: [],
+  characterBackgroundUrl: null,
 };
 
 const CharacterContext = createContext<CharacterContextType | undefined>(undefined);
@@ -51,7 +72,26 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
       try {
         const storedCharacter = await AsyncStorage.getItem('character');
         if (storedCharacter) {
-          setCharacter(JSON.parse(storedCharacter));
+          const parsed = JSON.parse(storedCharacter);
+          // Merge with defaults to ensure newly added fields exist
+          const merged: Character = {
+            ...DEFAULT_CHARACTER,
+            ...parsed,
+          };
+          // Normalize XP to next level
+          if (!merged.xpToNextLevel || merged.xpToNextLevel <= 0) {
+            merged.xpToNextLevel = calculateXPToNextLevel(merged.level || DEFAULT_CHARACTER.level);
+          }
+          // Normalize health bounds
+          if (merged.maxHealth <= 0) merged.maxHealth = DEFAULT_CHARACTER.maxHealth;
+          if (merged.currentHealth == null || merged.currentHealth < 0) merged.currentHealth = 0;
+          if (merged.currentHealth > merged.maxHealth) merged.currentHealth = merged.maxHealth;
+          // Ensure dates exist
+          if (merged.lastHealthUpdate === undefined) merged.lastHealthUpdate = null;
+          if (merged.routinesDate === undefined) merged.routinesDate = null;
+          if (!Array.isArray(merged.routinesDoneToday)) merged.routinesDoneToday = [];
+
+          setCharacter(merged);
         }
       } catch (error) {
         console.error('Failed to load character data:', error);
@@ -63,6 +103,45 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     loadCharacter();
   }, []);
 
+  // Health regeneration logic (called on init and whenever character loads)
+  const applyHealthRegen = () => {
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // If no last update recorded, set it and return
+    if (!character.lastHealthUpdate) {
+      updateCharacter({ lastHealthUpdate: nowIso });
+      return;
+    }
+
+    // Calculate minutes passed
+    const last = new Date(character.lastHealthUpdate);
+    const minutes = Math.floor((now.getTime() - last.getTime()) / (1000 * 60));
+
+    if (minutes <= 0 || character.currentHealth >= character.maxHealth) {
+      // Still update timestamp if missing
+      if (!character.lastHealthUpdate) updateCharacter({ lastHealthUpdate: nowIso });
+      return;
+    }
+
+    // Regeneration rate: 1 health per 30 minutes
+    const regenUnits = Math.floor(minutes / 30);
+    if (regenUnits > 0) {
+      const newHealth = Math.min(character.maxHealth, character.currentHealth + regenUnits);
+      updateCharacter({ currentHealth: newHealth, lastHealthUpdate: nowIso });
+    } else {
+      // No whole unit passed, still update timestamp to avoid extremely fast loops
+      updateCharacter({ lastHealthUpdate: nowIso });
+    }
+  };
+
+  // Ensure regen runs after init
+  useEffect(() => {
+    if (!isInitialized) return;
+    applyHealthRegen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInitialized]);
+
   // Update streak based on last workout date
   useEffect(() => {
     if (!isInitialized) return;
@@ -72,25 +151,21 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
       const lastWorkout = character.lastWorkout;
 
       if (!lastWorkout) {
-        // First time user, no streak yet
         return;
       }
 
       const lastWorkoutDate = new Date(lastWorkout);
       const currentDate = new Date(today);
       
-      // Calculate the difference in days
       const timeDiff = currentDate.getTime() - lastWorkoutDate.getTime();
       const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
 
       if (daysDiff === 1) {
-        // Consecutive day, increase streak
         updateCharacter({ 
           streak: character.streak + 1,
           lastWorkout: today
         });
       } else if (daysDiff > 1) {
-        // Streak broken
         updateCharacter({ 
           streak: 0,
           lastWorkout: today
@@ -99,6 +174,7 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     updateStreak();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]);
 
   // Save character data whenever it changes
@@ -116,12 +192,10 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     saveCharacter();
   }, [character, isInitialized]);
 
-  // Calculate XP needed for next level (increases with each level)
   const calculateXPToNextLevel = (level: number) => {
     return Math.floor(100 * Math.pow(1.2, level - 1));
   };
 
-  // Handle leveling up logic
   const checkLevelUp = (xp: number, currentLevel: number, currentXpToNextLevel: number) => {
     if (xp >= currentXpToNextLevel) {
       const newLevel = currentLevel + 1;
@@ -142,7 +216,6 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   };
 
-  // Update character with new values
   const updateCharacter = (updatedCharacter: Partial<Character>) => {
     setCharacter(prevCharacter => ({
       ...prevCharacter,
@@ -150,7 +223,6 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     }));
   };
 
-  // Add XP and handle leveling up
   const incrementXP = (amount: number) => {
     const newXP = character.xp + amount;
     const newTotalXP = character.totalXP + amount;
@@ -163,7 +235,6 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
   };
 
-  // Complete a quest and get the reward
   const completeQuest = (questId: string, xpReward: number) => {
     const today = new Date().toISOString().split('T')[0];
     const lastWorkout = character.lastWorkout;
@@ -172,7 +243,6 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     
     if (lastWorkout !== today) {
       if (!lastWorkout) {
-        // First workout ever
         newStreak = 1;
       } else {
         const lastWorkoutDate = new Date(lastWorkout);
@@ -182,17 +252,13 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
         const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
         
         if (daysDiff === 1) {
-          // Consecutive day
           newStreak += 1;
         } else if (daysDiff > 1) {
-          // Streak broken
           newStreak = 1;
         }
-        // If same day, streak stays the same
       }
     }
     
-    // Update character stats
     incrementXP(xpReward);
     updateCharacter({
       questsCompleted: character.questsCompleted + 1,
@@ -201,7 +267,33 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
   };
 
-  // Reset character to default values
+  // Health helpers
+  const consumeHealth = (amount: number) => {
+    if (character.currentHealth <= 0) return false;
+    const remaining = Math.max(0, character.currentHealth - amount);
+    updateCharacter({ currentHealth: remaining });
+    return remaining > 0;
+  };
+
+  // Daily routine helpers
+  const canStartRoutineToday = (routineId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const isSameDay = character.routinesDate === today;
+    const doneToday = isSameDay ? character.routinesDoneToday : [];
+    const isNewRoutine = !doneToday.includes(routineId);
+    if (isNewRoutine && doneToday.length >= 3) return false;
+    return true;
+  };
+
+  const registerRoutineStart = (routineId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const isSameDay = character.routinesDate === today;
+    const doneToday = isSameDay ? character.routinesDoneToday : [];
+    if (!doneToday.includes(routineId)) {
+      updateCharacter({ routinesDate: today, routinesDoneToday: [...doneToday, routineId] });
+    }
+  };
+
   const resetCharacter = () => {
     setCharacter(DEFAULT_CHARACTER);
   };
@@ -214,6 +306,10 @@ export const CharacterProvider: React.FC<{ children: ReactNode }> = ({ children 
         incrementXP,
         completeQuest,
         resetCharacter,
+        applyHealthRegen,
+        consumeHealth,
+        canStartRoutineToday,
+        registerRoutineStart,
       }}
     >
       {children}

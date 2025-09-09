@@ -3,38 +3,52 @@ import { Chrome as Home, Dumbbell, ShoppingBag, User, Plus } from 'lucide-react-
 import { useColorScheme, TouchableOpacity, View, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, getThemeColors } from '@/constants/Colors';
+import { useHaptics } from '@/hooks/useHaptics';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const FloatingActionButton = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
   const { width } = Dimensions.get('window');
+  const { impact } = useHaptics();
   
   return (
     <TouchableOpacity
-      onPress={() => router.push('/routine-builder')}
+      onPress={async () => { await impact('medium'); router.push('/routine-builder'); }}
+      activeOpacity={0.9}
       style={{
         position: 'absolute',
         bottom: 55,
-        left: width / 2 - 28, // Center horizontally
-        backgroundColor: theme.accent,
+        left: width / 2 - 28,
         width: 56,
         height: 56,
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-        transform: [{ rotate: '45deg' }],
         zIndex: 1000,
       }}
     >
-      <View style={{ transform: [{ rotate: '-45deg' }] }}>
-        <Plus size={28} color={theme.cardText} />
-      </View>
+      <LinearGradient
+        colors={[theme.accent, theme.accentSecondary]}
+        locations={[0.55, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 8,
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+          transform: [{ rotate: '45deg' }],
+        }}
+      >
+        <View style={{ transform: [{ rotate: '-45deg' }] }}>
+          <Plus size={28} color={theme.cardText} />
+        </View>
+      </LinearGradient>
     </TouchableOpacity>
   );
 };
@@ -43,6 +57,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
+  const { impact } = useHaptics();
   
   return (
     <View style={{ flex: 1 }}>
@@ -86,7 +101,7 @@ export default function TabLayout() {
           headerTitle: 'Muscledia',
                      headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => router.push('/profile')}
+              onPress={async () => { await impact('light'); router.push('/profile'); }}
               style={{ marginLeft: 16 }}
             >
               <User size={24} color={theme.text} />
@@ -120,7 +135,7 @@ export default function TabLayout() {
         options={{
           title: 'Arena',
           tabBarIcon: ({ color, size }) => <Dumbbell size={size} color={color} />,
-          headerTitle: 'Training Arena',
+          headerTitle: 'Arena',
         }}
       />
       

@@ -11,11 +11,13 @@ import {
 import { router } from 'expo-router';
 import { Colors, getThemeColors } from '@/constants/Colors';
 import { ArrowLeft, Plus, Trash2, ChevronDown } from 'lucide-react-native';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function RoutineEditorScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
+  const { impact } = useHaptics();
 
   const [routineName, setRoutineName] = useState('Chest Day');
   const [exercises, setExercises] = useState([
@@ -65,6 +67,7 @@ export default function RoutineEditorScreen() {
       }
       return exercise;
     }));
+    impact('light');
   };
 
   const updateSet = (exerciseId: number, setIndex: number, field: 'kg' | 'reps', value: string) => {
@@ -138,11 +141,11 @@ export default function RoutineEditorScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={async () => { await impact('selection'); router.back(); }}>
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>{routineName}</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={async () => impact('success')}>
           <Text style={[styles.saveButton, { color: theme.accent }]}>Save</Text>
         </TouchableOpacity>
       </View>
@@ -159,6 +162,7 @@ export default function RoutineEditorScreen() {
         <View style={styles.actionButtons}>
           <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: theme.accent }]}
+            onPress={async () => impact('light')}
           >
             <Plus size={20} color={theme.cardText} />
             <Text style={[styles.actionButtonText, { color: theme.cardText }]}>Add Exercise</Text>
@@ -166,6 +170,7 @@ export default function RoutineEditorScreen() {
           
           <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: theme.error }]}
+            onPress={async () => impact('warning')}
           >
             <Text style={[styles.actionButtonText, { color: 'white' }]}>Discard Workout</Text>
           </TouchableOpacity>

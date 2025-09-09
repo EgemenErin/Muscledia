@@ -14,6 +14,7 @@ import { ArrowLeft, Search, Plus, Dumbbell } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Colors, getThemeColors } from '@/constants/Colors';
 import { useRoutines } from '@/hooks/useRoutines';
+import { useHaptics } from '@/hooks/useHaptics';
 
 const { width } = Dimensions.get('window');
 
@@ -68,6 +69,7 @@ export default function RoutineBuilder() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
+  const { impact } = useHaptics();
   
   const [selectedCategory, setSelectedCategory] = useState('Popular');
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,6 +83,7 @@ export default function RoutineBuilder() {
   const addExercise = (exercise: any) => {
     const existingExercise = selectedExercises.find(ex => ex.id === exercise.id);
     if (existingExercise) {
+      impact('warning');
       Alert.alert('Already Added', `${exercise.name} is already in your routine`);
       return;
     }
@@ -96,11 +99,13 @@ export default function RoutineBuilder() {
     };
 
     setSelectedExercises([...selectedExercises, newExercise]);
+    impact('light');
     Alert.alert('Added!', `${exercise.name} added to routine`);
   };
 
   const handleSave = () => {
     if (selectedExercises.length === 0) {
+      impact('warning');
       Alert.alert('No Exercises', 'Please add at least one exercise to your routine');
       return;
     }
@@ -115,10 +120,12 @@ export default function RoutineBuilder() {
                name: text.trim(),
                exercises: selectedExercises,
              });
+            impact('success');
             Alert.alert('Success', 'Routine saved successfully!', [
               { text: 'OK', onPress: () => router.back() }
             ]);
           } catch (error) {
+            impact('error');
             Alert.alert('Error', 'Failed to save routine');
           }
         }
@@ -132,7 +139,7 @@ export default function RoutineBuilder() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.background }]}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={async () => { await impact('selection'); router.back(); }}>
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.text }]}>Build Routine</Text>
@@ -175,7 +182,7 @@ export default function RoutineBuilder() {
                   backgroundColor: selectedCategory === category ? theme.accent : theme.surface,
                 }
               ]}
-              onPress={() => setSelectedCategory(category)}
+              onPress={async () => { await impact('selection'); setSelectedCategory(category); }}
             >
               <Text style={[
                 styles.categoryText,
@@ -290,22 +297,22 @@ const styles = {
     alignItems: 'center' as const,
     marginHorizontal: 16,
     marginTop: 0,
-    marginBottom: 16,
+    marginBottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
+  searchInput: { flex: 1, fontSize: 16 },
   categoriesContainer: {
     marginBottom: 0,
     marginHorizontal: 0,
+    height: 44,
   },
   categoriesContent: {
     paddingHorizontal: 16,
+    paddingVertical: 0,
+    alignItems: 'center' as const,
     gap: 8,
   },
   categoryButton: {
@@ -316,31 +323,24 @@ const styles = {
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  categoryText: {
-    fontSize: 14,
-  },
+  categoryText: { fontSize: 14 },
   counterContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 6,
+    marginBottom: 6,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
     gap: 6,
   },
-  counterText: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-  },
-  mainScrollContainer: {
-    flex: 1,
-  },
+  counterText: { fontSize: 12, fontWeight: '600' as const },
+  mainScrollContainer: { flex: 1 },
   mainScrollContent: {
-    flexGrow: 1,
-    paddingBottom: 120, // Add padding at the bottom for the exercises grid
+    flexGrow: 0,
+    paddingBottom: 80,
   },
   exercisesGrid: {
     flexDirection: 'row' as const,
@@ -348,7 +348,7 @@ const styles = {
     justifyContent: 'space-between' as const,
     gap: 12,
     paddingHorizontal: 16,
-    marginTop: -8,
+    marginTop: 8,
   },
   exerciseCard: {
     width: (width - 44) / 2,
@@ -362,9 +362,7 @@ const styles = {
     alignItems: 'center' as const,
     marginBottom: 12,
   },
-  exerciseIcon: {
-    fontSize: 24,
-  },
+  exerciseIcon: { fontSize: 24 },
   addButton: {
     width: 28,
     height: 28,
@@ -372,24 +370,8 @@ const styles = {
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  exerciseName: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    marginBottom: 4,
-  },
-  exerciseDescription: {
-    fontSize: 12,
-    marginBottom: 8,
-    lineHeight: 16,
-  },
-  muscleTag: {
-    alignSelf: 'flex-start' as const,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  muscleText: {
-    fontSize: 10,
-    fontWeight: '600' as const,
-  },
+  exerciseName: { fontSize: 16, fontWeight: '600' as const, marginBottom: 4 },
+  exerciseDescription: { fontSize: 12, marginBottom: 8, lineHeight: 16 },
+  muscleTag: { alignSelf: 'flex-start' as const, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  muscleText: { fontSize: 10, fontWeight: '600' as const },
 }; 

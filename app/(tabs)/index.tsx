@@ -20,6 +20,7 @@ import { useWorkouts } from '@/hooks/useWorkouts';
 import { useRoutines } from '@/hooks/useRoutines';
 import { Colors, getThemeColors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function HomeScreen() {
   const { character, incrementXP } = useCharacter();
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const { workouts } = useWorkouts();
   const { routines } = useRoutines();
   const router = useRouter();
+  const { impact } = useHaptics();
   
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
@@ -58,13 +60,13 @@ export default function HomeScreen() {
 
   const RoutineCard = ({ routine }: { routine: any }) => (
     <TouchableOpacity 
-      onPress={() => router.push(`/routine-workout/${routine.id}`)}
+      onPress={async () => { await impact('selection'); router.push(`/routine-workout/${routine.id}`); }}
       activeOpacity={0.9}
       style={styles.routineCardWrapper}
     >
       <LinearGradient
         colors={[theme.accent, theme.accentSecondary]}
-        locations={[0, 0.85]}
+        locations={[0.55, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.routineCard}
@@ -157,7 +159,7 @@ export default function HomeScreen() {
       {routines.length === 0 ? (
         <TouchableOpacity 
           style={[styles.goldenCard, { backgroundColor: theme.cardBackground }]}
-          onPress={() => router.push('/routine-builder')}
+          onPress={async () => { await impact('medium'); router.push('/routine-builder'); }}
         >
           <View style={styles.routineContent}>
             <Text style={[styles.routineTitle, { color: theme.cardText }]}>Create Your First Routine</Text>

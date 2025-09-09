@@ -12,6 +12,7 @@ import { useCharacter } from '@/hooks/useCharacter';
 import { Colors, getThemeColors } from '@/constants/Colors';
 import { Zap, Trophy, Clock, CheckCircle } from 'lucide-react-native';
 import { dailyQuests, weeklyQuests, specialQuests } from '@/data/quests';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function QuestsScreen() {
   const colorScheme = useColorScheme();
@@ -19,12 +20,14 @@ export default function QuestsScreen() {
   const theme = getThemeColors(isDark);
   const { character, incrementXP, completeQuest } = useCharacter();
   const [completedQuests, setCompletedQuests] = useState<string[]>([]);
+  const { impact } = useHaptics();
 
   const handleQuestComplete = (questId: string, xpReward: number) => {
     if (!completedQuests.includes(questId)) {
       setCompletedQuests([...completedQuests, questId]);
       incrementXP(xpReward);
       completeQuest(questId, xpReward);
+      impact('success');
     }
   };
 
@@ -33,32 +36,30 @@ export default function QuestsScreen() {
     
     if (isCompleted) {
       return (
-        <TouchableOpacity
-          style={[styles.questCard, { backgroundColor: theme.success }]}
-          onPress={() => handleQuestComplete(quest.id, quest.xp)}
-          disabled
-        >
-          <View style={styles.questHeader}>
-            <View style={[styles.questIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
-              <CheckCircle size={24} color={theme.cardText} />
+        <View style={styles.questCardWrapper}>
+          <View style={[styles.questCard, { backgroundColor: theme.success }]}> 
+            <View style={styles.questHeader}>
+              <View style={[styles.questIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
+                <CheckCircle size={24} color={theme.cardText} />
+              </View>
+              <View style={styles.questInfo}>
+                <Text style={[styles.questTitle, { color: theme.cardText }]}>
+                  {quest.title}
+                </Text>
+                <Text style={[styles.questDescription, { color: theme.cardText }]}>
+                  {quest.description}
+                </Text>
+              </View>
             </View>
-            <View style={styles.questInfo}>
-              <Text style={[styles.questTitle, { color: theme.cardText }]}>
-                {quest.title}
-              </Text>
-              <Text style={[styles.questDescription, { color: theme.cardText }]}>
-                {quest.description}
-              </Text>
+            <View style={styles.questReward}>
+              <View style={styles.rewardContainer}>
+                <Zap size={16} color={theme.cardText} />
+                <Text style={[styles.rewardText, { color: theme.cardText }]}>+{quest.xp} XP</Text>
+              </View>
+              <Text style={[styles.questType, { color: theme.cardText }]}>{type}</Text>
             </View>
           </View>
-          <View style={styles.questReward}>
-            <View style={styles.rewardContainer}>
-              <Zap size={16} color={theme.cardText} />
-              <Text style={[styles.rewardText, { color: theme.cardText }]}>+{quest.xp} XP</Text>
-            </View>
-            <Text style={[styles.questType, { color: theme.cardText }]}>{type}</Text>
-          </View>
-        </TouchableOpacity>
+        </View>
       );
     }
 
@@ -71,7 +72,7 @@ export default function QuestsScreen() {
       >
         <LinearGradient
           colors={[theme.accent, theme.accentSecondary]}
-          locations={[0, 0.85]}
+          locations={[0.55, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.questCard}

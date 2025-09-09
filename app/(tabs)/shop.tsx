@@ -12,12 +12,14 @@ import { Colors, getThemeColors } from '@/constants/Colors';
 import { Gem } from 'lucide-react-native';
 import { useCharacter } from '@/hooks/useCharacter';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function ShopScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
   const { updateCharacter } = useCharacter();
+  const { impact } = useHaptics();
 
   const shopCategories = [
     {
@@ -60,6 +62,7 @@ export default function ShopScreen() {
 
   const handleSelectBackground = (url: string) => {
     updateCharacter({ characterBackgroundUrl: url });
+    impact('success');
     Alert.alert('Background Updated', 'Your character background has been set.');
   };
 
@@ -68,13 +71,13 @@ export default function ShopScreen() {
 
     return (
       <TouchableOpacity 
-        onPress={() => { if (isBackground) handleSelectBackground(item.url); }}
+        onPress={async () => { if (isBackground) handleSelectBackground(item.url); else await impact('selection'); }}
         activeOpacity={0.9}
         style={styles.shopItem}
       >
         <LinearGradient
           colors={[theme.accent, theme.accentSecondary]}
-          locations={[0, 0.85]}
+          locations={[0.55, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.shopItemInner}

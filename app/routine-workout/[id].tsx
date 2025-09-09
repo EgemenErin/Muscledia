@@ -13,6 +13,8 @@ import { Colors, getThemeColors } from '@/constants/Colors';
 import { ArrowLeft, Check, X, ChevronDown, Plus, Edit } from 'lucide-react-native';
 import { useRoutines } from '@/hooks/useRoutines';
 import { useCharacter } from '@/hooks/useCharacter';
+import { useRaid } from '@/hooks/useRaid';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function RoutineWorkoutScreen() {
   const { id } = useLocalSearchParams();
@@ -21,6 +23,8 @@ export default function RoutineWorkoutScreen() {
   const theme = getThemeColors(isDark);
   const { getRoutine, markSetCompleted, deleteRoutine, updateRoutine } = useRoutines();
   const { incrementXP, character, canStartRoutineToday, registerRoutineStart, consumeHealth, applyHealthRegen } = useCharacter();
+  const { contributeSets } = useRaid();
+  const { impact } = useHaptics();
   
   const [routine, setRoutine] = useState<any>(null);
   const [expandedExercises, setExpandedExercises] = useState<string[]>([]);
@@ -72,6 +76,11 @@ export default function RoutineWorkoutScreen() {
     // Give XP only when completing
     if (newStatus) {
       incrementXP(10);
+      // contribute to weekly raid boss
+      contributeSets(1);
+      impact('success');
+    } else {
+      impact('selection');
     }
 
     // Update local state mirror
@@ -205,18 +214,18 @@ export default function RoutineWorkoutScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={async () => { await impact('selection'); router.back(); }}>
           <ArrowLeft size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.text }]}>{routine.name}</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity 
-            onPress={() => setIsEditMode(!isEditMode)}
+            onPress={async () => { await impact('selection'); setIsEditMode(!isEditMode); }}
             style={[styles.editButton, { backgroundColor: isEditMode ? theme.accent : 'transparent' }]}
           >
             <Edit size={20} color={isEditMode ? theme.cardText : theme.text} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleDeleteRoutine}>
+          <TouchableOpacity onPress={async () => { await impact('warning'); handleDeleteRoutine(); }}>
             <X size={24} color={theme.error} />
           </TouchableOpacity>
         </View>

@@ -3,6 +3,7 @@ import { Chrome as Home, Dumbbell, ShoppingBag, User, Plus } from 'lucide-react-
 import { useColorScheme, TouchableOpacity, View, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, getThemeColors } from '@/constants/Colors';
+import { useHaptics } from '@/hooks/useHaptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const FloatingActionButton = () => {
@@ -10,10 +11,11 @@ const FloatingActionButton = () => {
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
   const { width } = Dimensions.get('window');
+  const { impact } = useHaptics();
   
   return (
     <TouchableOpacity
-      onPress={() => router.push('/routine-builder')}
+      onPress={async () => { await impact('medium'); router.push('/routine-builder'); }}
       activeOpacity={0.9}
       style={{
         position: 'absolute',
@@ -26,7 +28,7 @@ const FloatingActionButton = () => {
     >
       <LinearGradient
         colors={[theme.accent, theme.accentSecondary]}
-        locations={[0, 0.85]}
+        locations={[0.55, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
@@ -55,6 +57,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
+  const { impact } = useHaptics();
   
   return (
     <View style={{ flex: 1 }}>
@@ -98,7 +101,7 @@ export default function TabLayout() {
           headerTitle: 'Muscledia',
                      headerLeft: () => (
             <TouchableOpacity 
-              onPress={() => router.push('/profile')}
+              onPress={async () => { await impact('light'); router.push('/profile'); }}
               style={{ marginLeft: 16 }}
             >
               <User size={24} color={theme.text} />
@@ -132,7 +135,7 @@ export default function TabLayout() {
         options={{
           title: 'Arena',
           tabBarIcon: ({ color, size }) => <Dumbbell size={size} color={color} />,
-          headerTitle: 'Training Arena',
+          headerTitle: 'Arena',
         }}
       />
       

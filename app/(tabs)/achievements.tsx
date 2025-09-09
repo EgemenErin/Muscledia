@@ -8,254 +8,108 @@ import {
 } from 'react-native';
 import { useCharacter } from '@/hooks/useCharacter';
 import { Colors, getThemeColors } from '@/constants/Colors';
-import { Trophy, Star, Award, Crown, Zap } from 'lucide-react-native';
-import { badges } from '@/data/badges';
+import { Trophy, Zap, Swords, ShieldCheck } from 'lucide-react-native';
+import { useRaid } from '@/hooks/useRaid';
+import { LinearGradient } from 'expo-linear-gradient';
 
-export default function AchievementsScreen() {
+export default function MuscleChampionsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
   const { character } = useCharacter();
+  const { state, resetForNewWeekIfNeeded } = useRaid();
 
-  // Check if badge is unlocked based on character progress
-  const isBadgeUnlocked = (badge: any) => {
-    switch (badge.id) {
-      case 'first-workout':
-        return character.totalXP > 0;
-      case 'streak-master':
-        return character.streak >= 7;
-      case 'xp-collector':
-        return character.totalXP >= 1000;
-      case 'quest-hunter':
-        return character.questsCompleted >= 10;
-      case 'level-up':
-        return character.level >= 5;
-      case 'dedication':
-        return character.streak >= 30;
-      default:
-        return false;
-    }
-  };
-
-  const BadgeCard = ({ badge }: { badge: any }) => {
-    const unlocked = isBadgeUnlocked(badge);
-    
-    return (
-      <View 
-        style={[
-          styles.badgeCard, 
-          { 
-            backgroundColor: unlocked ? theme.cardBackground : theme.surface,
-            opacity: unlocked ? 1 : 0.6 
-          }
-        ]}
-      >
-        <View style={[styles.badgeIcon, { backgroundColor: 'rgba(0,0,0,0.1)' }]}>
-          {unlocked ? (
-            <Trophy size={32} color={theme.cardText} />
-          ) : (
-            <Award size={32} color={theme.textMuted} />
-          )}
-        </View>
-        <Text style={[styles.badgeTitle, { color: unlocked ? theme.cardText : theme.text }]}>
-          {badge.title}
-        </Text>
-        <Text style={[styles.badgeDescription, { color: unlocked ? theme.cardText : theme.textSecondary }]}>
-          {badge.description}
-        </Text>
-        {unlocked && (
-          <View style={styles.unlockedIndicator}>
-            <Star size={16} color={theme.cardText} />
-            <Text style={[styles.unlockedText, { color: theme.cardText }]}>Unlocked!</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  const StatsCard = ({ icon, title, value, color }: { icon: any; title: string; value: string; color: string }) => (
-    <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
-      <View style={[styles.statIcon, { backgroundColor: color + '20' }]}>
-        {icon}
-      </View>
-      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
-      <Text style={[styles.statTitle, { color: theme.textSecondary }]}>{title}</Text>
-    </View>
-  );
+  const progress = Math.max(0, Math.min(1, state.totalSets / state.boss.weeklyTargetSets));
+  const remaining = Math.max(0, state.boss.weeklyTargetSets - state.totalSets);
 
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* Stats Overview */}
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Progress</Text>
-      <View style={styles.statsGrid}>
-        <StatsCard 
-          icon={<Trophy size={20} color={theme.accent} />}
-          title="Level"
-          value={character.level.toString()}
-          color={theme.accent}
-        />
-        <StatsCard 
-          icon={<Zap size={20} color="#0EA5E9" />}
-          title="Total XP"
-          value={character.totalXP.toString()}
-          color="#0EA5E9"
-        />
-        <StatsCard 
-          icon={<Award size={20} color="#10B981" />}
-          title="Quests"
-          value={character.questsCompleted.toString()}
-          color="#10B981"
-        />
-        <StatsCard 
-          icon={<Crown size={20} color="#F97316" />}
-          title="Streak"
-          value={character.streak.toString()}
-          color="#F97316"
-        />
+      {/* Boss Banner */}
+      <LinearGradient
+        colors={[theme.accent, theme.accentSecondary]}
+        locations={[0.55, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.banner}
+      >
+        <View style={styles.bannerHeader}>
+          <Swords size={28} color={theme.cardText} />
+          <Text style={[styles.bannerTitle, { color: theme.cardText }]}>Muscle Champions</Text>
+          <ShieldCheck size={28} color={theme.cardText} />
+        </View>
+        <Text style={[styles.bossName, { color: theme.cardText }]}>{state.boss.name}</Text>
+        <Text style={[styles.bossDesc, { color: theme.cardText }]}>{state.boss.description}</Text>
+      </LinearGradient>
+
+      {/* Progress Card */}
+      <View style={[styles.progressCard, { backgroundColor: theme.surface }]}> 
+        <View style={styles.progressRow}> 
+          <Text style={[styles.progressLabel, { color: theme.text }]}>Week</Text>
+          <Text style={[styles.progressValue, { color: theme.text }]}>{state.weekKey}</Text>
+        </View>
+        <View style={styles.progressRow}> 
+          <Text style={[styles.progressLabel, { color: theme.text }]}>Target Sets</Text>
+          <Text style={[styles.progressValue, { color: theme.text }]}>{state.boss.weeklyTargetSets}</Text>
+        </View>
+        <View style={styles.progressRow}> 
+          <Text style={[styles.progressLabel, { color: theme.text }]}>Contributed</Text>
+          <Text style={[styles.progressValue, { color: theme.text }]}>{state.totalSets}</Text>
+        </View>
+        <View style={styles.progressRow}> 
+          <Text style={[styles.progressLabel, { color: theme.text }]}>Remaining</Text>
+          <Text style={[styles.progressValue, { color: theme.text }]}>{remaining}</Text>
+        </View>
+        <View style={styles.progressBarOuter}> 
+          <View style={[styles.progressBarInner, { width: `${progress * 100}%`, backgroundColor: theme.accent }]} />
+        </View>
+        <Text style={[styles.progressPct, { color: theme.textSecondary }]}>{Math.round(progress * 100)}% Complete</Text>
       </View>
 
-      {/* Achievements */}
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Achievements</Text>
-      <View style={styles.badgesGrid}>
-        {badges.map((badge) => (
-          <BadgeCard key={badge.id} badge={badge} />
-        ))}
+      {/* Rewards */}
+      <View style={styles.rewardsRow}> 
+        <View style={[styles.reward, { backgroundColor: theme.surface }]}> 
+          <Trophy size={22} color={theme.accent} />
+          <Text style={[styles.rewardText, { color: theme.text }]}>+{state.boss.rewardXP} XP on clear</Text>
+        </View>
+        <View style={[styles.reward, { backgroundColor: theme.surface }]}> 
+          <Zap size={22} color={theme.accent} />
+          <Text style={[styles.rewardText, { color: theme.text }]}>Personal weekly challenge</Text>
+        </View>
       </View>
 
-      {/* Arena Info */}
-      <View style={[styles.arenaCard, { backgroundColor: theme.cardBackground }]}>
-        <Text style={[styles.arenaTitle, { color: theme.cardText }]}>Training Arena</Text>
-        <Text style={[styles.arenaDescription, { color: theme.cardText }]}>
-          Compete with other warriors and climb the leaderboards!
-        </Text>
-        <Text style={[styles.arenaStatus, { color: theme.cardText }]}>
-          Coming Soon...
-        </Text>
+      {/* How to play */}
+      <View style={[styles.infoCard, { backgroundColor: theme.surface }]}> 
+        <Text style={[styles.infoTitle, { color: theme.text }]}>How it works</Text>
+        <Text style={[styles.infoLine, { color: theme.textSecondary }]}>• Complete sets in your routines. Each finished set adds +1.</Text>
+        <Text style={[styles.infoLine, { color: theme.textSecondary }]}>• Your personal target is {state.boss.weeklyTargetSets} sets this week.</Text>
+        <Text style={[styles.infoLine, { color: theme.textSecondary }]}>• Claim +{state.boss.rewardXP} XP when you reach the target.</Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  statCard: {
-    width: '48%',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statTitle: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  badgesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  badgeCard: {
-    width: '48%',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  badgeIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  badgeTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  badgeDescription: {
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  unlockedIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  unlockedText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  arenaCard: {
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  arenaTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  arenaDescription: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  arenaStatus: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    opacity: 0.8,
-  },
+  container: { flex: 1 },
+  contentContainer: { padding: 16 },
+  banner: { borderRadius: 16, padding: 16, marginBottom: 16 },
+  bannerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bannerTitle: { fontSize: 18, fontWeight: 'bold' },
+  bossName: { fontSize: 22, fontWeight: 'bold', marginTop: 8 },
+  bossDesc: { fontSize: 13, marginTop: 4 },
+  progressCard: { borderRadius: 16, padding: 16, marginBottom: 16 },
+  progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  progressLabel: { fontSize: 13, opacity: 0.9 },
+  progressValue: { fontSize: 13, fontWeight: '600' },
+  progressBarOuter: { height: 10, borderRadius: 8, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.08)', marginTop: 8 },
+  progressBarInner: { height: '100%' },
+  progressPct: { fontSize: 12, marginTop: 6 },
+  rewardsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  reward: { flex: 1, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rewardText: { fontSize: 13, fontWeight: '600' },
+  infoCard: { borderRadius: 16, padding: 16 },
+  infoTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
+  infoLine: { fontSize: 13, marginBottom: 4 },
 });

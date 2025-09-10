@@ -18,7 +18,7 @@ export default function ShopScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
-  const { updateCharacter } = useCharacter();
+  const { updateCharacter, character, addCoins, purchaseItem } = useCharacter();
   const { impact } = useHaptics();
 
   const shopCategories = [
@@ -66,12 +66,34 @@ export default function ShopScreen() {
     Alert.alert('Background Updated', 'Your character background has been set.');
   };
 
+  const handlePurchase = async (categoryTitle: string, item: any) => {
+    const ok = purchaseItem(categoryTitle as any, item.name, item.price, item.url);
+    if (ok) {
+      await impact('success');
+      Alert.alert('Purchased', `${item.name} acquired!`);
+    } else {
+      await impact('warning');
+      Alert.alert('Not enough coins', 'Earn more coins to buy this item.');
+    }
+  };
+
   const ShopItem = ({ item, categoryTitle }: { item: any; categoryTitle: string }) => {
     const isBackground = categoryTitle === 'Backgrounds' && item.url;
+    const isOwned = (
+      categoryTitle === 'Shirts' ? character.ownedShirts.includes(item.name) :
+      categoryTitle === 'Pants' ? character.ownedPants.includes(item.name) :
+      categoryTitle === 'Equipment' ? character.ownedEquipment.includes(item.name) :
+      categoryTitle === 'Backgrounds' ? character.ownedBackgrounds.includes(item.url || '') :
+      false
+    );
 
     return (
       <TouchableOpacity 
-        onPress={async () => { if (isBackground) handleSelectBackground(item.url); else await impact('selection'); }}
+        onPress={async () => { 
+          if (isOwned) { await impact('selection'); return; }
+          if (isBackground && item.url) handleSelectBackground(item.url);
+          else handlePurchase(categoryTitle, item);
+        }}
         activeOpacity={0.9}
         style={styles.shopItem}
       >
@@ -89,7 +111,7 @@ export default function ShopScreen() {
           <View style={styles.itemFooter}>
             <View style={styles.priceContainer}>
               <Gem size={16} color={theme.cardText} />
-              <Text style={[styles.itemPrice, { color: theme.cardText }]}>{item.price}</Text>
+              <Text style={[styles.itemPrice, { color: theme.cardText }]}>{isOwned ? 'Owned' : item.price}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -102,6 +124,18 @@ export default function ShopScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.contentContainer}
     >
+      <View style={styles.headerRow}>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>Shop</Text>
+        <View style={styles.balRow}>
+          <Gem size={18} color={theme.accent} />
+          <Text style={[styles.balText, { color: theme.accent }]}>{character.coins}</Text>
+          <TouchableOpacity onPress={async () => { addCoins(500); await impact('success'); }} style={styles.addBtn}>
+            <LinearGradient colors={[theme.accent, theme.accentSecondary]} locations={[0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.addBtnInner}>
+              <Text style={[styles.addBtnText, { color: theme.cardText }]}>+500</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
       <Text style={[styles.welcomeText, { color: theme.text }]}>
         Welcome to the shop! Treat yourself. Come to see{"\n"}what we have for you!
       </Text>
@@ -123,6 +157,13 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   contentContainer: { padding: 16 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  pageTitle: { fontSize: 20, fontWeight: '800' },
+  balRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  balText: { fontWeight: '800' },
+  addBtn: { marginLeft: 8 },
+  addBtnInner: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  addBtnText: { fontWeight: '700', fontSize: 12 },
   welcomeText: { fontSize: 16, textAlign: 'center', marginBottom: 24, lineHeight: 24 },
   categorySection: { marginBottom: 32 },
   categoryTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },

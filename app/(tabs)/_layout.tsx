@@ -138,6 +138,8 @@ export default function TabLayout() {
           headerTitle: 'Arena',
         }}
       />
+
+      
       
       <Tabs.Screen
         name="exercises"

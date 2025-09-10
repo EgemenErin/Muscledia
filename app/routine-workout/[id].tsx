@@ -14,6 +14,7 @@ import { ArrowLeft, Check, X, ChevronDown, Plus, Edit } from 'lucide-react-nativ
 import { useRoutines } from '@/hooks/useRoutines';
 import { useCharacter } from '@/hooks/useCharacter';
 import { useRaid } from '@/hooks/useRaid';
+import { useLeagues } from '@/hooks/useLeagues';
 import { useHaptics } from '@/hooks/useHaptics';
 
 export default function RoutineWorkoutScreen() {
@@ -24,6 +25,7 @@ export default function RoutineWorkoutScreen() {
   const { getRoutine, markSetCompleted, deleteRoutine, updateRoutine } = useRoutines();
   const { incrementXP, character, canStartRoutineToday, registerRoutineStart, consumeHealth, applyHealthRegen } = useCharacter();
   const { contributeSets } = useRaid();
+  const { addPoints } = useLeagues();
   const { impact } = useHaptics();
   
   const [routine, setRoutine] = useState<any>(null);
@@ -78,6 +80,8 @@ export default function RoutineWorkoutScreen() {
       incrementXP(10);
       // contribute to weekly raid boss
       contributeSets(1);
+      // contribute to monthly leagues points (1 point per completed set)
+      addPoints(1);
       impact('success');
     } else {
       impact('selection');

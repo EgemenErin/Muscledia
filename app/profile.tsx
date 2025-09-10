@@ -7,14 +7,21 @@ import {
   ScrollView,
   TextInput,
   useColorScheme,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useCharacter } from '@/hooks/useCharacter';
 import { useAuth } from '@/hooks/useAuth';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import ProgressBar from '@/components/ProgressBar';
-import { ArrowLeft, Heart, Star, Settings, Bell, HelpCircle, LogOut } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLeagues } from '@/hooks/useLeagues';
+import { useHaptics } from '@/hooks/useHaptics';
+import { ArrowLeft, Heart, Star, Settings, Bell, HelpCircle, LogOut, Camera } from 'lucide-react-native';
 import { Colors, getThemeColors } from '@/constants/Colors';
+import * as ImagePicker from 'expo-image-picker';
+import { useNotifications } from '@/hooks/useNotifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const { character, updateCharacter } = useCharacter();
@@ -22,6 +29,9 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const theme = getThemeColors(isDark);
+  const { state: leagues, currentDivision, nextDivision, progressToNext, claimPendingReward, daysUntilReset } = useLeagues();
+  const { impact } = useHaptics();
+  const { isGranted, requestPermission, scheduleInSeconds, scheduleDailyReminder, cancelAll } = useNotifications();
 
   const equipment = [
     { name: 'Accessory', type: 'Earring', stat: 'Intelligence 7' },
@@ -30,14 +40,19 @@ export default function ProfileScreen() {
     { name: 'Pants', type: 'Shorts', stat: 'Speed 10' },
   ];
 
+  const strength = Math.min(999, Math.floor(character.totalXP / 50) + character.level * 2);
+  const stamina = Math.min(999, character.maxHealth + character.level * 3);
+  const agility = Math.min(999, 50 + character.level * 2);
+  const focus = Math.min(999, 30 + Math.floor(character.streak * 1.5));
+  const luck = Math.min(999, 10 + Math.floor(character.level / 2));
+
   const attributes = [
+    { name: 'Strength', value: strength.toString() },
+    { name: 'Stamina', value: stamina.toString() },
+    { name: 'Agility', value: agility.toString() },
+    { name: 'Focus', value: focus.toString() },
+    { name: 'Luck', value: luck.toString() },
     { name: 'Level', value: character.level.toString() },
-    { name: 'Intelligence', value: '232' },
-    { name: 'Muscle Mass', value: '232' },
-    { name: 'Agility', value: '232' },
-    { name: 'Push Muscles', value: '232' },
-    { name: 'Pull Muscles', value: '232' },
-    { name: 'Leg Muscles', value: '232' },
   ];
 
   const skills = [
@@ -62,116 +77,227 @@ export default function ProfileScreen() {
       </View>
 
       {/* Character Section */}
-      <View style={[styles.characterSection, { backgroundColor: theme.surface }]}>
-        {/* Health Bar */}
-        <View style={styles.healthContainer}>
-          <Heart size={16} color={theme.health} />
-          <Text style={[styles.barLabel, { color: theme.text }]}>Health</Text>
-          <ProgressBar 
-            progress={0.58} // 29/50
-            color={theme.health}
-            height={8}
-          />
-          <Text style={[styles.barText, { color: theme.textSecondary }]}>29/50</Text>
+      <LinearGradient
+        colors={[theme.accent, theme.accentSecondary]}
+        locations={[0.55, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.characterSection]}
+      >
+        <View style={styles.topRow}>
+          {/* Left: Avatar with edit button */}
+          <View style={styles.avatarContainer}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={async () => {
+                const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (perm.status !== 'granted') return;
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+                if (!result.canceled && result.assets?.[0]?.uri) {
+                  updateCharacter({ avatarUrl: result.assets[0].uri });
+                }
+              }}
+            >
+              <CharacterAvatar 
+                level={character.level} 
+                gender={character.gender} 
+                streak={character.streak}
+                size="large"
+                imageUrlOverride={character.avatarUrl || undefined}
+              />
+              <View style={styles.cameraBadge}>
+                <Camera size={16} color={theme.cardText} />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Right: Username and dates */}
+          <View style={styles.identityBlock}>
+            <Text style={[styles.identityName, { color: theme.cardText }]}>{user?.email?.split('@')[0] || 'egemenerin'}</Text>
+            <Text style={[styles.identityMeta, { color: theme.cardText }]}>Member Since • 2 Jan 2025</Text>
+            <Text style={[styles.identityMeta, { color: theme.cardText }]}>Last Login • 26 Mar 2025</Text>
+          </View>
         </View>
 
-        {/* Character Avatar */}
-        <View style={styles.avatarContainer}>
-          <CharacterAvatar 
-            level={character.level} 
-            gender={character.gender} 
-            streak={character.streak}
-            size="large"
-          />
+        <View style={styles.barsContainer}>
+          {/* Health Bar */}
+          <View style={styles.barItem}>
+            <View style={styles.barTitleRow}><Heart size={14} color={theme.cardText} /><Text style={[styles.barLabel, { color: theme.cardText, marginLeft: 6 }]}>Health</Text></View>
+            <ProgressBar progress={character.currentHealth / character.maxHealth} color={theme.cardText} height={8} />
+            <Text style={[styles.barText, { color: theme.cardText }]}>{character.currentHealth}/{character.maxHealth}</Text>
+          </View>
+          {/* XP Bar */}
+          <View style={styles.barItem}>
+            <View style={styles.barTitleRow}><Star size={14} color={theme.cardText} /><Text style={[styles.barLabel, { color: theme.cardText, marginLeft: 6 }]}>Level {character.level}</Text></View>
+            <ProgressBar progress={character.xp / character.xpToNextLevel} color={theme.cardText} height={8} />
+            <Text style={[styles.barText, { color: theme.cardText }]}>{character.xp}/{character.xpToNextLevel}</Text>
+          </View>
         </View>
-
-        {/* Level Bar */}
-        <View style={styles.levelContainer}>
-          <Star size={16} color={theme.xp} />
-          <Text style={[styles.barLabel, { color: theme.text }]}>Level {character.level}</Text>
-          <ProgressBar 
-            progress={character.xp / character.xpToNextLevel} 
-            color={theme.xp}
-            height={8}
-          />
-          <Text style={[styles.barText, { color: theme.textSecondary }]}>
-            {character.xp}/{character.xpToNextLevel}
-          </Text>
-        </View>
-      </View>
-
-      {/* User Info */}
-      <View style={[styles.infoSection, { backgroundColor: theme.surface }]}>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Username</Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>{user?.email?.split('@')[0] || 'egemenerin'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>User ID</Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>832745387414693-953</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Member Since</Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>2 Jan 2025</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Last Logged In</Text>
-          <Text style={[styles.infoValue, { color: theme.text }]}>26 March 2025</Text>
-        </View>
-      </View>
+      </LinearGradient>
 
       {/* Equipment Section */}
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Outfits</Text>
       {equipment.map((item, index) => (
-        <View key={index} style={[styles.equipmentCard, { backgroundColor: theme.cardBackground }]}>
+        <LinearGradient
+          key={index}
+          colors={[theme.accent, theme.accentSecondary]}
+          locations={[0.55, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.equipmentCard]}
+        >
           <Text style={[styles.equipmentName, { color: theme.cardText }]}>{item.name}</Text>
           <Text style={[styles.equipmentType, { color: theme.cardText }]}>{item.type}</Text>
           <Text style={[styles.equipmentStat, { color: theme.cardText }]}>{item.stat}</Text>
-        </View>
+        </LinearGradient>
       ))}
+
+      {/* Show equipped items */}
+      <View style={[styles.infoSection, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Equipped</Text>
+        <View style={styles.infoRow}><Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Shirt</Text><Text style={[styles.infoValue, { color: theme.text }]}>{character.equippedShirt || 'None'}</Text></View>
+        <View style={styles.infoRow}><Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Pants</Text><Text style={[styles.infoValue, { color: theme.text }]}>{character.equippedPants || 'None'}</Text></View>
+        <View style={styles.infoRow}><Text style={[styles.infoLabel, { color: theme.textSecondary }]}>Equipment</Text><Text style={[styles.infoValue, { color: theme.text }]}>{character.equippedEquipment || 'None'}</Text></View>
+      </View>
+
+      {/* Leagues Section */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Leagues</Text>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={async () => { await impact('selection'); router.push('/leagues'); }}
+      >
+      <View style={[styles.leaguesCard, { backgroundColor: theme.surface }]}> 
+        <Text style={[styles.leagueTitle, { color: theme.text }]}>Current: {currentDivision.name}</Text>
+        <Text style={[styles.leagueSub, { color: theme.textSecondary }]}>Month {leagues.monthKey} • Resets in {daysUntilReset}d</Text>
+        <View style={styles.leagueRow}>
+          <Text style={[styles.leaguePoints, { color: theme.text }]}>{leagues.points} pts</Text>
+          <Text style={[styles.leagueNext, { color: theme.textSecondary }]}>
+            {nextDivision ? `Next ${nextDivision.name} at ${nextDivision.minPoints}` : 'Top division'}
+          </Text>
+        </View>
+        <View style={[styles.progressBarShell, { backgroundColor: theme.background }]}>
+          <View style={[styles.progressBarFill, { width: `${progressToNext * 100}%`, backgroundColor: theme.accent }]} />
+        </View>
+        {leagues.pendingRewardXp > 0 && (
+          <TouchableOpacity
+            style={[styles.claimButton]}
+            onPress={async () => { await impact('success'); claimPendingReward(); }}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={[theme.accent, theme.accentSecondary]}
+              locations={[0.55, 1]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.claimGradient}
+            >
+              <Text style={[styles.claimText, { color: theme.cardText }]}>Claim {leagues.pendingRewardXp} XP</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+      </View>
+      </TouchableOpacity>
 
       {/* Attributes Section */}
       <Text style={[styles.sectionTitle, { color: theme.text }]}>Attributes</Text>
       <View style={styles.attributesGrid}>
         {attributes.map((attr, index) => (
-          <View key={index} style={[styles.attributeCard, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.attributeName, { color: theme.textSecondary }]}>{attr.name}</Text>
-            <Text style={[styles.attributeValue, { color: theme.text }]}>{attr.value}</Text>
-          </View>
+          <LinearGradient
+            key={index}
+            colors={[theme.accent, theme.accentSecondary]}
+            locations={[0.55, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.attributeCard]}
+          >
+            <Text style={[styles.attributeName, { color: theme.cardText }]}>{attr.name}</Text>
+            <Text style={[styles.attributeValue, { color: theme.cardText }]}>{attr.value}</Text>
+          </LinearGradient>
         ))}
       </View>
 
-      {/* Skills Section */}
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Skills</Text>
-      <View style={styles.skillsGrid}>
-        {skills.map((skill, index) => (
-          <View key={index} style={[styles.skillCard, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.skillName, { color: theme.cardText }]}>{skill.name}</Text>
-            <Text style={[styles.skillInfo, { color: theme.cardText }]}>{skill.info}</Text>
-          </View>
-        ))}
-      </View>
+      {/* Skills removed per request */}
 
       {/* Settings Options */}
       <View style={styles.settingsSection}>
-        <TouchableOpacity style={[styles.settingsOption, { backgroundColor: theme.surface }]}>
+        <LinearGradient
+          colors={[theme.accent, theme.accentSecondary]}
+          locations={[0.55, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.settingsOption]}
+        >
           <Settings size={20} color={theme.text} />
           <Text style={[styles.settingsText, { color: theme.text }]}>Settings</Text>
+        </LinearGradient>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={async () => {
+            const ok = isGranted ?? await requestPermission();
+            if (!ok) return;
+            await impact('success');
+            await scheduleInSeconds(3, 'Muscledia', 'This is a test notification.');
+          }}
+        >
+          <LinearGradient
+            colors={[theme.accent, theme.accentSecondary]}
+            locations={[0.55, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.settingsOption]}
+          >
+            <Bell size={20} color={theme.text} />
+            <Text style={[styles.settingsText, { color: theme.text }]}>Test Notification</Text>
+          </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingsOption, { backgroundColor: theme.surface }]}>
-          <Bell size={20} color={theme.text} />
-          <Text style={[styles.settingsText, { color: theme.text }]}>Notifications</Text>
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={async () => {
+            const ok = isGranted ?? await requestPermission();
+            if (!ok) return;
+            await impact('success');
+            // schedule daily reminder at 9:00 local time
+            await scheduleDailyReminder(9, 0);
+          }}
+        >
+          <LinearGradient
+            colors={[theme.accent, theme.accentSecondary]}
+            locations={[0.55, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.settingsOption]}
+          >
+            <Bell size={20} color={theme.text} />
+            <Text style={[styles.settingsText, { color: theme.text }]}>Enable Daily Reminder (9:00)</Text>
+          </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingsOption, { backgroundColor: theme.surface }]}>
+        <LinearGradient
+          colors={[theme.accent, theme.accentSecondary]}
+          locations={[0.55, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.settingsOption]}
+        >
           <HelpCircle size={20} color={theme.text} />
           <Text style={[styles.settingsText, { color: theme.text }]}>Support</Text>
-        </TouchableOpacity>
+        </LinearGradient>
         <TouchableOpacity 
           style={[styles.settingsOption, { backgroundColor: theme.surface }]}
           onPress={logout}
         >
           <LogOut size={20} color={theme.error} />
           <Text style={[styles.settingsText, { color: theme.error }]}>Logout</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.settingsOption, { backgroundColor: theme.surface }]}
+          onPress={async () => {
+            await AsyncStorage.removeItem('onboarding_complete');
+            Alert.alert('Onboarding reset', 'Close and reopen the app to see onboarding again.');
+          }}
+        >
+          <Text style={[styles.settingsText, { color: theme.text }]}>Reset Onboarding</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -200,23 +326,26 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
   },
-  healthContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingRight: 10,
-  },
-  levelContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingLeft: 10,
-  },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   avatarContainer: {
     alignItems: 'center',
   },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    padding: 6,
+    borderRadius: 16,
+  },
+  identityBlock: { flex: 1, marginLeft: 16 },
+  identityName: { fontSize: 18, fontWeight: '700' },
+  identityMeta: { fontSize: 12, marginTop: 4 },
+  barsContainer: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  barItem: { flex: 1 },
+  barTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   barLabel: {
     fontSize: 12,
     marginTop: 4,
@@ -230,6 +359,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
+  },
+  userInfoMerged: {
+    width: '100%',
+    marginTop: 12,
   },
   infoRow: {
     flexDirection: 'row',
@@ -332,4 +465,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 12,
   },
+  leaguesCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  leagueTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  leagueSub: {
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  leagueRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  leaguePoints: { fontSize: 18, fontWeight: '700' },
+  leagueNext: { fontSize: 12 },
+  progressBarShell: { height: 8, borderRadius: 6, overflow: 'hidden', marginTop: 10 },
+  progressBarFill: { height: '100%', borderRadius: 6 },
+  claimButton: { marginTop: 12 },
+  claimGradient: { paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  claimText: { fontWeight: '700' },
 }); 

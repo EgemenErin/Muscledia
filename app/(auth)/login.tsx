@@ -100,13 +100,13 @@ export default function LoginScreen() {
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>Password</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: inputBgColor, borderColor }]}>
-                <Lock size={20} color={isDark ? '#9CA3AF' : '#6B7280'} style={styles.inputIcon} />
+              <Text style={[styles.label, { color: theme.text }]}>Password</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
+                <Lock size={20} color={theme.textMuted} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { color: textColor }]}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Enter your password"
-                  placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                  placeholderTextColor={theme.textMuted}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -117,9 +117,9 @@ export default function LoginScreen() {
                   style={styles.eyeButton}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    <EyeOff size={20} color={theme.textMuted} />
                   ) : (
-                    <Eye size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    <Eye size={20} color={theme.textMuted} />
                   )}
                 </TouchableOpacity>
               </View>

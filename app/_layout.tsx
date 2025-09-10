@@ -7,6 +7,8 @@ import { WorkoutsProvider } from '@/hooks/useWorkouts';
 import { RoutineProvider } from '@/hooks/useRoutines';
 import { AuthProvider } from '@/hooks/useAuth';
 import { RaidProvider } from '@/hooks/useRaid';
+import { LeaguesProvider } from '@/hooks/useLeagues';
+import { NotificationsProvider } from '@/hooks/useNotifications';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -17,12 +19,16 @@ export default function RootLayout() {
         <RoutineProvider>
           <CharacterProvider>
             <RaidProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="+not-found" />
-              </Stack>
-              <StatusBar style="auto" />
+              <LeaguesProvider>
+                <NotificationsProvider>
+                  <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <StatusBar style="auto" />
+                </NotificationsProvider>
+              </LeaguesProvider>
             </RaidProvider>
           </CharacterProvider>
         </RoutineProvider>

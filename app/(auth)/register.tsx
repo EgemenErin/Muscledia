@@ -29,13 +29,8 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const router = useRouter();
   const colorScheme = useColorScheme();
-
   const isDark = colorScheme === 'dark';
-  const textColor = isDark ? '#F9FAFB' : '#111827';
-  const bgColor = isDark ? '#111827' : '#F9FAFB';
-  const cardBgColor = isDark ? '#1F2937' : '#FFFFFF';
-  const inputBgColor = isDark ? '#374151' : '#F3F4F6';
-  const borderColor = isDark ? '#4B5563' : '#D1D5DB';
+  const theme = getThemeColors(isDark);
 
   const handleRegister = async () => {
     if (isLoading) return;
@@ -76,36 +71,40 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: bgColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient
+      colors={isDark ? [theme.background, theme.surface] : [theme.surface, theme.background]}
+      style={styles.container}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={styles.content}>
           {/* Logo/Title */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: textColor }]}>Join MuscleDia</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
+            <Text style={[styles.title, { color: theme.accent }]}>Join Muscledia</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
               Start your fitness adventure today
             </Text>
           </View>
 
           {/* Register Form */}
-          <View style={[styles.form, { backgroundColor: cardBgColor }]}>
-            <Text style={[styles.formTitle, { color: textColor }]}>Create Account</Text>
+          <View style={[styles.form, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.formTitle, { color: theme.text }]}>Create Account</Text>
             
             {/* Name Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>Name</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: inputBgColor, borderColor }]}>
-                <User size={20} color={isDark ? '#9CA3AF' : '#6B7280'} style={styles.inputIcon} />
+              <Text style={[styles.label, { color: theme.text }]}>Name</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
+                <User size={20} color={theme.textMuted} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { color: textColor }]}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Enter your name"
-                  placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                  placeholderTextColor={theme.textMuted}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -116,13 +115,13 @@ export default function RegisterScreen() {
 
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>Email</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: inputBgColor, borderColor }]}>
-                <Mail size={20} color={isDark ? '#9CA3AF' : '#6B7280'} style={styles.inputIcon} />
+              <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
+                <Mail size={20} color={theme.textMuted} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { color: textColor }]}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Enter your email"
-                  placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                  placeholderTextColor={theme.textMuted}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -134,13 +133,13 @@ export default function RegisterScreen() {
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>Password</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: inputBgColor, borderColor }]}>
-                <Lock size={20} color={isDark ? '#9CA3AF' : '#6B7280'} style={styles.inputIcon} />
+              <Text style={[styles.label, { color: theme.text }]}>Password</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
+                <Lock size={20} color={theme.textMuted} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { color: textColor }]}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Create a password"
-                  placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                  placeholderTextColor={theme.textMuted}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -151,9 +150,9 @@ export default function RegisterScreen() {
                   style={styles.eyeButton}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    <EyeOff size={20} color={theme.textMuted} />
                   ) : (
-                    <Eye size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    <Eye size={20} color={theme.textMuted} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -164,13 +163,13 @@ export default function RegisterScreen() {
 
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: textColor }]}>Confirm Password</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: inputBgColor, borderColor }]}>
-                <Lock size={20} color={isDark ? '#9CA3AF' : '#6B7280'} style={styles.inputIcon} />
+              <Text style={[styles.label, { color: theme.text }]}>Confirm Password</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme.surfaceLight, borderColor: theme.border }]}>
+                <Lock size={20} color={theme.textMuted} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { color: textColor }]}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="Confirm your password"
-                  placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
+                  placeholderTextColor={theme.textMuted}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
@@ -181,9 +180,9 @@ export default function RegisterScreen() {
                   style={styles.eyeButton}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    <EyeOff size={20} color={theme.textMuted} />
                   ) : (
-                    <Eye size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+                    <Eye size={20} color={theme.textMuted} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -191,7 +190,7 @@ export default function RegisterScreen() {
 
             {/* Register Button */}
             <TouchableOpacity
-              style={[styles.registerButton, { opacity: isLoading ? 0.7 : 1 }]}
+              style={[styles.registerButton, { opacity: isLoading ? 0.7 : 1, backgroundColor: theme.accent }]}
               onPress={handleRegister}
               disabled={isLoading}
             >
@@ -204,17 +203,18 @@ export default function RegisterScreen() {
 
             {/* Login Link */}
             <View style={styles.loginContainer}>
-              <Text style={[styles.loginText, { color: isDark ? '#D1D5DB' : '#4B5563' }]}>
+              <Text style={[styles.loginText, { color: theme.textSecondary }]}> 
                 Already have an account?{' '}
               </Text>
               <TouchableOpacity onPress={navigateToLogin}>
-                <Text style={styles.loginLink}>Sign in</Text>
+                <Text style={[styles.loginLink, { color: theme.accent }]}>Sign in</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 

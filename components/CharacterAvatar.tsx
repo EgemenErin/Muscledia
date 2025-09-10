@@ -6,9 +6,10 @@ type CharacterAvatarProps = {
   gender: string;
   streak: number;
   size?: 'small' | 'medium' | 'large';
+  imageUrlOverride?: string | null;
 };
 
-export default function CharacterAvatar({ level, gender, streak, size = 'medium' }: CharacterAvatarProps) {
+export default function CharacterAvatar({ level, gender, streak, size = 'medium', imageUrlOverride }: CharacterAvatarProps) {
   const flameOpacity = useRef(new Animated.Value(0.4)).current;
   
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function CharacterAvatar({ level, gender, streak, size = 'medium'
 
   // Get avatar image based on gender and stage
   const getAvatarImage = () => {
+    if (imageUrlOverride) return imageUrlOverride;
     const stage = getAvatarStage(level);
     const avatarGender = gender === 'male' ? 'male' : 'female';
     

@@ -13,7 +13,7 @@ import { useCharacter } from '@/hooks/useCharacter';
 import { useAuth } from '@/hooks/useAuth';
 import CharacterAvatar from '@/components/CharacterAvatar';
 import ProgressBar from '@/components/ProgressBar';
-import { Siren as Fire, Zap, Trophy, TrendingUp, Heart, Coins } from 'lucide-react-native';
+import { Siren as Fire, Zap, Trophy, TrendingUp, Heart, Coins, Sparkles } from 'lucide-react-native';
 import StatsCard from '@/components/StatsCard';
 import { getGreeting } from '@/utils/helpers';
 import { useWorkouts } from '@/hooks/useWorkouts';
@@ -110,6 +110,19 @@ export default function HomeScreen() {
 
       {/* Character Section (sprite + bars) */}
       <View style={[styles.characterSection, { backgroundColor: theme.surface }]}>
+        <View style={styles.characterHeaderRow}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Character</Text>
+          <TouchableOpacity
+            onPress={async () => { await impact('selection'); router.push('/customize'); }}
+            style={styles.customizeBtn}
+            activeOpacity={0.9}
+          >
+            <LinearGradient colors={[theme.accent, theme.accentSecondary]} locations={[0.55, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.customizeBtnInner}>
+              <Sparkles size={16} color={theme.cardText} />
+              <Text style={[styles.customizeText, { color: theme.cardText }]}>Customize</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
         <View style={styles.characterImageContainer}>
           {character.characterBackgroundUrl ? (
             <Image
@@ -257,6 +270,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
+  characterHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
+  customizeBtn: { },
+  customizeBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+  customizeText: { fontSize: 12, fontWeight: '700' },
   routineCardWrapper: {
     marginBottom: 12,
     borderRadius: 16,
